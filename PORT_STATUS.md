@@ -64,6 +64,11 @@ Updated: 2026-09-11
   overload (`provider_unavailable`, HTTP 502 in the direct diagnostic). Live
   model success is therefore dependent on provider availability, not WASI or
   credential transport.
+- The user-supplied exact streaming `curl -N` payload was rerun in a fresh
+  profile session with `OPENROUTER_API_KEY` mapped from `ORkey`. OpenRouter
+  returned SSE chunks and the final event identified Nvidia
+  `provider_unavailable` / HTTP 502 `Service temporarily overloaded`, proving
+  the same result independently of PicoClaw.
 - Spin 4.1.0 smoke test: direct `spin up -f build/picoclaw-wasi.wasm` failed
   with the expected missing supported HTTP/component export; this is recorded
   as a runtime compatibility result, not a silent failure.
