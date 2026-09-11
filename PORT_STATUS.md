@@ -58,9 +58,12 @@ Updated: 2026-09-11
   `nvidia/nemotron-3-ultra-550b-a55b:free` with runtime secret `ORkey`, plus
   local model `1kb/huihui-qwen3.8-27b-mlx` through Ollama at `127.0.0.1:11434`.
 - Real OpenRouter smoke now uses the official `https://openrouter.ai/api/v1`
-  endpoint and reaches the service through the restricted bridge, but returns
-  HTTP 401 with runtime-only `ORkey`. DNS/transport is therefore fixed; live
-  model success remains blocked by the current key being rejected or expired.
+  endpoint and reaches the service through the restricted bridge. After a new
+  profile session loaded the updated `ORkey`, authentication succeeded; the
+  requested Nvidia free-model route currently reports an upstream provider
+  overload (`provider_unavailable`, HTTP 502 in the direct diagnostic). Live
+  model success is therefore dependent on provider availability, not WASI or
+  credential transport.
 - Spin 4.1.0 smoke test: direct `spin up -f build/picoclaw-wasi.wasm` failed
   with the expected missing supported HTTP/component export; this is recorded
   as a runtime compatibility result, not a silent failure.

@@ -31,6 +31,10 @@ type chatRequest struct {
 }
 type chatMessage struct{ Role, Content string }
 type chatResponse struct {
+	Error *struct {
+		Message string `json:"message"`
+		Code    int    `json:"code"`
+	} `json:"error,omitempty"`
 	Choices []struct {
 		Message chatMessage `json:"message"`
 	} `json:"choices"`
@@ -210,6 +214,9 @@ func callProvider(c config, skills, prompt string) (string, error) {
 	if err := json.NewDecoder(resp.Body).Decode(&decoded); err != nil {
 		return "", fmt.Errorf("decode provider response: %w", err)
 	}
+	if decoded.Error != nil {
+		return "", fmt.Errorf("provider error %d: %s", decoded.Error.Code, decoded.Error.Message)
+	}
 	if len(decoded.Choices) == 0 {
 		return "", errors.New("provider response contained no choices")
 	}
@@ -243,6 +250,9 @@ func callBridge(endpoint string, body []byte, key string) (string, error) {
 	var decoded chatResponse
 	if err := json.Unmarshal([]byte(response.Body), &decoded); err != nil {
 		return "", fmt.Errorf("decode provider response: %w", err)
+	}
+	if decoded.Error != nil {
+		return "", fmt.Errorf("provider error %d: %s", decoded.Error.Code, decoded.Error.Message)
 	}
 	if len(decoded.Choices) == 0 {
 		return "", errors.New("provider response contained no choices")

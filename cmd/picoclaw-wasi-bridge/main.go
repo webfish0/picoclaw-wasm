@@ -109,7 +109,18 @@ func doHTTP(request envelope) envelope {
 	if err != nil {
 		return envelope{Kind: "http_response", Status: 502, StatusText: err.Error()}
 	}
-	return envelope{Kind: "http_response", Status: resp.StatusCode, StatusText: resp.Status, Body: string(body)}
+	statusText := resp.Status
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		statusText += ": " + truncate(string(body), 512)
+	}
+	return envelope{Kind: "http_response", Status: resp.StatusCode, StatusText: statusText, Body: string(body)}
+}
+
+func truncate(s string, n int) string {
+	if len(s) <= n {
+		return s
+	}
+	return s[:n] + "..."
 }
 
 func fail(err error) { fmt.Fprintln(os.Stderr, "picoclaw-wasi-bridge:", err); os.Exit(1) }
