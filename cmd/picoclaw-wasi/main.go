@@ -160,11 +160,13 @@ func loadSkills(root string) (string, error) {
 
 func callProvider(c config, skills, prompt string) (string, error) {
 	u, err := url.Parse(c.APIBase)
-	if err != nil || u.Scheme != "https" && u.Hostname() != "localhost" && u.Hostname() != "127.0.0.1" {
-		return "", errors.New("api_base must use HTTPS or localhost")
+	host := ""
+	if err == nil {
+		host = u.Hostname()
 	}
-	if u.Hostname() != c.AllowedHost && !(u.Hostname() == "localhost" || u.Hostname() == "127.0.0.1") {
-		return "", fmt.Errorf("network destination %q is not allowed", u.Hostname())
+	allowed := err == nil && host == c.AllowedHost && ((u.Scheme == "https" && host == "api.openrouter.ai") || (u.Scheme == "http" && (host == "localhost" || host == "127.0.0.1")))
+	if !allowed {
+		return "", errors.New("api_base must use HTTPS or localhost")
 	}
 	key := os.Getenv(c.APIKeyEnv)
 	if key == "" {

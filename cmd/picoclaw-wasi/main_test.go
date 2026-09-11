@@ -58,3 +58,12 @@ func TestMissingSecret(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 }
+
+func TestProviderRejectsHostNotInConfiguredAllowlist(t *testing.T) {
+	os.Setenv("TEST_KEY", "test")
+	defer os.Unsetenv("TEST_KEY")
+	_, err := callProvider(config{Model: "test", APIBase: "http://127.0.0.1:18080/v1", APIKeyEnv: "TEST_KEY", AllowedHost: "api.openrouter.ai"}, "", "hello")
+	if err == nil || !strings.Contains(err.Error(), "HTTPS or localhost") {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}

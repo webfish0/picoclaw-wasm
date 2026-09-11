@@ -32,3 +32,18 @@ Skills are untrusted prompt data in milestone 1: no scripts, shell commands or
 MCP references execute. Future WASM component skills receive explicit,
 non-inherited capabilities per skill. Model inference remains native on macOS
 through OpenRouter or an OpenAI-compatible Ollama/MLX/LM Studio endpoint.
+
+## Follow-on capability plan
+
+Instruction-only skills are supported now. Skills containing scripts, shell
+commands, native binaries or stdio MCP are classified as executable skills and
+are rejected by milestone 1. A future skill component contract should declare
+its required filesystem roots and network hosts; the host grants only those
+capabilities to that component and never inherits the agent's full preopens.
+
+Telegram is deferred to an external HTTP bridge or a separately sandboxed
+component. The module must not receive Telegram credentials plus arbitrary
+network access. Local-first/cloud-fallback is a provider policy: try the
+configured local endpoint, then OpenRouter only when explicitly enabled and
+allowlisted. WASI Preview 2/Component Model HTTP is the preferred direct
+network follow-on; Preview 3 is not required for this prototype.
