@@ -106,7 +106,10 @@ func (s *server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 func configDir(path string) string {
 	if strings.HasSuffix(path, ".json") {
-		return path[:strings.LastIndex(path, "/")]
+		if i := strings.LastIndex(path, "/"); i >= 0 {
+			return path[:i]
+		}
+		return "."
 	}
 	return path
 }
