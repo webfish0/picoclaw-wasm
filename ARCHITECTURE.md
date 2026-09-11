@@ -6,7 +6,7 @@ The first artifact is a single-request WASI module:
 
 Host-granted capabilities are limited to read-only `/config`, read-only
 `/skills`, read/write `/workspace`, selected environment variables/secrets, and
-an outbound provider allowlist (`api.openrouter.ai` plus one configured local
+an outbound provider allowlist (`openrouter.ai` plus one configured local
 model host). The current Go Preview 1 module has no direct host-network provider
 path; the native bridge enforces this allowlist for the milestone. There is no
 home-directory preopen, process capability, listener, PTY, Unix socket,

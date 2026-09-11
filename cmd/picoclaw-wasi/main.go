@@ -101,7 +101,7 @@ func loadConfig(path string) (config, error) {
 		c.APIKeyEnv = "OPENROUTER_API_KEY"
 	}
 	if c.AllowedHost == "" {
-		c.AllowedHost = "api.openrouter.ai"
+		c.AllowedHost = "openrouter.ai"
 	}
 	return c, nil
 }
@@ -178,12 +178,12 @@ func callProvider(c config, skills, prompt string) (string, error) {
 	if err == nil {
 		host = u.Hostname()
 	}
-	allowed := err == nil && host == c.AllowedHost && ((u.Scheme == "https" && host == "api.openrouter.ai") || (u.Scheme == "http" && (host == "localhost" || host == "127.0.0.1")))
+	allowed := err == nil && host == c.AllowedHost && ((u.Scheme == "https" && host == "openrouter.ai") || (u.Scheme == "http" && (host == "localhost" || host == "127.0.0.1")))
 	if !allowed {
 		return "", errors.New("api_base must use HTTPS or localhost")
 	}
 	key := os.Getenv(c.APIKeyEnv)
-	if key == "" && host == "api.openrouter.ai" {
+	if key == "" && host == "openrouter.ai" {
 		return "", fmt.Errorf("missing runtime secret %s", c.APIKeyEnv)
 	}
 	body, _ := json.Marshal(chatRequest{Model: c.Model, Messages: []chatMessage{{Role: "system", Content: "You are PicoClaw-WASI.\n" + skills}, {Role: "user", Content: prompt}}})

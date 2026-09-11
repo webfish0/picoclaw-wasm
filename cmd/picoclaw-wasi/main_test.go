@@ -53,7 +53,7 @@ func TestForbiddenPaths(t *testing.T) {
 }
 
 func TestMissingSecret(t *testing.T) {
-	_, err := callProvider(config{Model: "test", APIBase: "https://api.openrouter.ai/v1", APIKeyEnv: "MISSING_KEY", AllowedHost: "api.openrouter.ai"}, "", "hello")
+	_, err := callProvider(config{Model: "test", APIBase: "https://openrouter.ai/v1", APIKeyEnv: "MISSING_KEY", AllowedHost: "openrouter.ai"}, "", "hello")
 	if err == nil || !strings.Contains(err.Error(), "missing runtime secret") {
 		t.Fatalf("unexpected error: %v", err)
 	}

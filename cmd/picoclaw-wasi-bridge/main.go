@@ -89,7 +89,7 @@ func main() {
 
 func doHTTP(request envelope) envelope {
 	u, err := url.Parse(request.URL)
-	allowed := err == nil && ((u.Scheme == "https" && u.Hostname() == "api.openrouter.ai") || (u.Scheme == "http" && (u.Hostname() == "localhost" || u.Hostname() == "127.0.0.1")))
+	allowed := err == nil && ((u.Scheme == "https" && u.Hostname() == "openrouter.ai") || (u.Scheme == "http" && (u.Hostname() == "localhost" || u.Hostname() == "127.0.0.1")))
 	if !allowed {
 		return envelope{Kind: "http_response", Status: 403, StatusText: "network destination denied"}
 	}
