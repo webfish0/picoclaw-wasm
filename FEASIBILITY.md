@@ -18,8 +18,8 @@ boundary; the focused entry point intentionally excludes those integrations.
 | Config | `pkg/config`, JSON/YAML, env-backed secrets | Compile-compatible; implicit home paths are unsafe | Explicit `/config` and runtime secret injection |
 | Skills | `pkg/skills` reads workspace/global/builtin `SKILL.md` | Instruction-only loading is portable | Read-only explicit `/skills`; disable install/registry first |
 | Workspace | OS files, JSONL/session/state/media | Portable with preopens | Rooted adapter; reject absolute and parent paths |
-| Providers | HTTP/OpenAI-compatible and OpenRouter | Runtime egress dependent | Allowlisted provider adapter |
-| Local models | Configurable `api_base` | Loopback runtime dependent | Explicit Ollama/MLX/LM Studio endpoint test |
+| Providers | HTTP/OpenAI-compatible and OpenRouter | Not reachable from Go `wasip1` Preview 1 `net` today; Go uses `net_fake.go` | Component Model HTTP/sockets or narrow host bridge |
+| Local models | Configurable `api_base` | Loopback unavailable through current Go Preview 1 module | Explicit component/sockets adapter or host bridge |
 | Listeners | `net.Listen`, gateway and channels | Not assumed in Preview 1 | stdin/stdout first; host HTTP later |
 | Processes | `os/exec`, process hooks, shell tools | Must be unavailable | Compile out and return unsupported errors |
 | MCP | Stdio subprocesses plus remote transports | Stdio incompatible with goal | Exclude stdio; defer remote MCP |

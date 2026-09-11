@@ -7,8 +7,10 @@ The first artifact is a single-request WASI module:
 Host-granted capabilities are limited to read-only `/config`, read-only
 `/skills`, read/write `/workspace`, selected environment variables/secrets, and
 an outbound provider allowlist (`api.openrouter.ai` plus one configured local
-model host). There is no home-directory preopen, process capability, listener,
-PTY, Unix socket, arbitrary fetch or stdio MCP.
+model host). The current Go Preview 1 module has no host-network provider path;
+the eventual component/bridge must enforce this allowlist. There is no
+home-directory preopen, process capability, listener, PTY, Unix socket,
+arbitrary fetch or stdio MCP.
 
 Use Wasmtime first for the filesystem/stdin/stdout prototype because explicit
 WASI Preview 1 preopens and environment controls are straightforward. Runtime

@@ -27,6 +27,8 @@ Updated: 2026-09-11
   the measured cold run was about 70 ms in the local test.
 - Go `wasip1` under Wasmtime could not resolve OpenRouter DNS and could not
   connect to a local mock socket. This is the active provider/network blocker.
+- Local Go source inspection confirms `net_fake.go` is selected for `wasip1`,
+  so Wasmtime network flags cannot provide real host TCP to this module.
 
 ## Tests and failures
 
