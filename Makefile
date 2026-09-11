@@ -1,4 +1,4 @@
-.PHONY: all build install uninstall clean help test integration-test build-all lint-docs wasi wasi-test wasi-run wasi-bridge
+.PHONY: all build install uninstall clean help test integration-test build-all lint-docs wasi wasi-test wasi-run wasi-bridge wasi-http
 
 # Build variables
 BINARY_NAME=picoclaw
@@ -532,3 +532,7 @@ wasi-run: wasi
 ## wasi-bridge: Run the WASI module with the restricted native HTTP bridge
 wasi-bridge: wasi
 	GOTOOLCHAIN=auto go run ./cmd/picoclaw-wasi-bridge --wasm $(BUILD_DIR)/picoclaw-wasi.wasm
+
+## wasi-http: Serve the WASI module through the localhost-only browser adapter
+wasi-http: wasi
+	GOTOOLCHAIN=auto go run ./cmd/picoclaw-wasi-http --wasm $(BUILD_DIR)/picoclaw-wasi.wasm

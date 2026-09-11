@@ -183,7 +183,7 @@ func callProvider(c config, skills, prompt string) (string, error) {
 		return "", errors.New("api_base must use HTTPS or localhost")
 	}
 	key := os.Getenv(c.APIKeyEnv)
-	if key == "" {
+	if key == "" && host == "api.openrouter.ai" {
 		return "", fmt.Errorf("missing runtime secret %s", c.APIKeyEnv)
 	}
 	body, _ := json.Marshal(chatRequest{Model: c.Model, Messages: []chatMessage{{Role: "system", Content: "You are PicoClaw-WASI.\n" + skills}, {Role: "user", Content: prompt}}})
@@ -191,7 +191,9 @@ func callProvider(c config, skills, prompt string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	req.Header.Set("Authorization", "Bearer "+key)
+	if key != "" {
+		req.Header.Set("Authorization", "Bearer "+key)
+	}
 	req.Header.Set("Content-Type", "application/json")
 	if os.Getenv("PICOCLAW_WASI_HTTP_BRIDGE") == "1" {
 		return callBridge(u.String()+"/chat/completions", body, key)

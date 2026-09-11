@@ -68,10 +68,14 @@ Updated: 2026-09-11
 - The first `make wasi-test` attempt exposed the expected limitation that a
   macOS host cannot execute a WASI test binary directly (`exec format error`);
   the target now compiles the WASI test artifact and runs the tests natively.
+- Full human-style browser UAT passed through the localhost adapter: browser
+  POST → `picoclaw-wasi-http` → restricted bridge → Wasmtime → WASI module →
+  Ollama model `1kb/huihui-qwen3.8-27b-mlx`; visible response was
+  `BROWSER_UAT_OK`. The earlier direct browser page was not this path.
 
 ## Next action
 
 Keep the direct-network blocker open for Component Model/Spin evaluation, but
-use the verified bridge path for the prototype. Do not mark runtime evaluation
-complete until Spin/component options and the direct-vs-bridge decision are
-recorded on the board.
+use the verified bridge path for the prototype. The browser UAT now covers the
+milestone path; remaining work is follow-on direct Component Model networking
+and broader channel compatibility.

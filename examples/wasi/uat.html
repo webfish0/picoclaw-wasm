@@ -8,7 +8,7 @@
 <button id="send">Send test prompt</button>
 <pre id="status">Ready</pre>
 <script>
-const endpoint = "http://127.0.0.1:11434/v1/chat/completions";
+const endpoint = new URLSearchParams(location.search).get("endpoint") || "http://127.0.0.1:11434/v1/chat/completions";
 const model = "1kb/huihui-qwen3.8-27b-mlx";
 document.querySelector("#send").addEventListener("click", async () => {
   const status = document.querySelector("#status");

@@ -31,12 +31,13 @@ type envelope struct {
 func main() {
 	wasm := flag.String("wasm", "build/picoclaw-wasi.wasm", "WASI module")
 	config := flag.String("config", "examples/wasi", "host directory mounted as /config")
+	configFile := flag.String("config-file", "config.json", "config filename within the mounted config directory")
 	skills := flag.String("skills", "examples/wasi/skills", "host directory mounted as /skills")
 	workspace := flag.String("workspace", "/tmp/picoclaw-wasi-workspace", "host directory mounted as /workspace")
 	secretEnv := flag.String("secret-env", "OPENROUTER_API_KEY", "secret environment variable inherited by the module")
 	flag.Parse()
 
-	cmd := exec.Command("wasmtime", "run", "--dir", *config+"::/config", "--dir", *skills+"::/skills", "--dir", *workspace+"::/workspace", "--env", "PICOCLAW_WASI_HTTP_BRIDGE=1", "--env", *secretEnv, *wasm)
+	cmd := exec.Command("wasmtime", "run", "--dir", *config+"::/config", "--dir", *skills+"::/skills", "--dir", *workspace+"::/workspace", "--env", "PICOCLAW_WASI_HTTP_BRIDGE=1", "--env", "PICOCLAW_WASI_CONFIG=/config/"+*configFile, "--env", *secretEnv, *wasm)
 	childIn, err := cmd.StdinPipe()
 	if err != nil {
 		fail(err)

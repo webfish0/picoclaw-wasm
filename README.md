@@ -66,6 +66,22 @@ The bridge is a temporary deployment adapter; its allowlist is enforced in
 native code and it does not expose arbitrary fetch or host filesystem access to
 the module.
 
+For human-style local UAT, serve the page over HTTP. Opening it as `file://`
+causes browser security policies to report `TypeError: Failed to fetch` before
+the request reaches the adapter:
+
+```sh
+make wasi
+PICOCLAW_REPO_ROOT="$PWD" go run ./cmd/picoclaw-wasi-http \
+  --wasm build/picoclaw-wasi.wasm \
+  --config examples/wasi/ollama-config.json
+python3 -m http.server 18081 --directory examples/wasi
+```
+
+Open `http://127.0.0.1:18081/uat.html?endpoint=http%3A%2F%2F127.0.0.1%3A18082%2Fv1%2Fchat%2Fcompletions`.
+The button exercises browser → localhost adapter → Wasmtime → PicoClaw WASI
+→ SKILL.md/workspace → Ollama.
+
 The OpenRouter example uses model `nvidia/nemotron-3-ultra-550b-a55b:free` and
 the runtime secret variable `ORkey`. For a local Ollama-compatible server, use
 `examples/wasi/ollama-config.json`, which targets
