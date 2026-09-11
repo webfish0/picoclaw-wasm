@@ -51,6 +51,20 @@ The current Go `wasip1` module can load files and skills under Wasmtime, but
 does not yet reach DNS or localhost sockets; the provider runtime blocker is
 tracked on the project board. Do not enable unrestricted host networking as a
 workaround without updating the capability design and tests.
+
+For a working local end-to-end path, build the native bridge and point it at a
+local OpenAI-compatible mock or model server:
+
+```sh
+go build -o build/picoclaw-wasi-bridge ./cmd/picoclaw-wasi-bridge
+printf 'hello\n' | LOCAL_TEST_KEY=not-a-real-key \
+  ./build/picoclaw-wasi-bridge --wasm build/picoclaw-wasi.wasm \
+  --config examples/wasi/bridge-config --secret-env LOCAL_TEST_KEY
+```
+
+The bridge is a temporary deployment adapter; its allowlist is enforced in
+native code and it does not expose arbitrary fetch or host filesystem access to
+the module.
 See `FEASIBILITY.md`, `ARCHITECTURE.md`, `WASI_PORT_PLAN.md` and
 `PORT_STATUS.md` for the compatibility assessment, capability model and current
 runtime blockers.

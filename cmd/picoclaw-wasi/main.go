@@ -36,6 +36,16 @@ type chatResponse struct {
 	} `json:"choices"`
 }
 
+type bridgeEnvelope struct {
+	Kind       string            `json:"kind"`
+	URL        string            `json:"url,omitempty"`
+	Method     string            `json:"method,omitempty"`
+	Headers    map[string]string `json:"headers,omitempty"`
+	Body       string            `json:"body,omitempty"`
+	Status     int               `json:"status,omitempty"`
+	StatusText string            `json:"status_text,omitempty"`
+}
+
 func main() {
 	cfgPath := os.Getenv("PICOCLAW_WASI_CONFIG")
 	if cfgPath == "" {
@@ -167,6 +177,9 @@ func callProvider(c config, skills, prompt string) (string, error) {
 	}
 	req.Header.Set("Authorization", "Bearer "+key)
 	req.Header.Set("Content-Type", "application/json")
+	if os.Getenv("PICOCLAW_WASI_HTTP_BRIDGE") == "1" {
+		return callBridge(u.String()+"/chat/completions", body, key)
+	}
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return "", fmt.Errorf("provider request: %w", err)
@@ -177,6 +190,40 @@ func callProvider(c config, skills, prompt string) (string, error) {
 	}
 	var decoded chatResponse
 	if err := json.NewDecoder(resp.Body).Decode(&decoded); err != nil {
+		return "", fmt.Errorf("decode provider response: %w", err)
+	}
+	if len(decoded.Choices) == 0 {
+		return "", errors.New("provider response contained no choices")
+	}
+	return decoded.Choices[0].Message.Content, nil
+}
+
+// callBridge is deliberately a small, line-delimited protocol. The WASM
+// module has no process or socket capability; a native host helper performs
+// the already allowlisted HTTP request and returns the response body.
+func callBridge(endpoint string, body []byte, key string) (string, error) {
+	request := bridgeEnvelope{Kind: "http_request", URL: endpoint, Method: http.MethodPost,
+		Headers: map[string]string{"Authorization": "Bearer " + key, "Content-Type": "application/json"}, Body: string(body)}
+	encoded, err := json.Marshal(request)
+	if err != nil {
+		return "", fmt.Errorf("encode bridge request: %w", err)
+	}
+	if _, err := fmt.Fprintln(os.Stdout, string(encoded)); err != nil {
+		return "", fmt.Errorf("write bridge request: %w", err)
+	}
+	line, err := bufio.NewReader(os.Stdin).ReadString('\n')
+	if err != nil {
+		return "", fmt.Errorf("read bridge response: %w", err)
+	}
+	var response bridgeEnvelope
+	if err := json.Unmarshal([]byte(strings.TrimSpace(line)), &response); err != nil {
+		return "", fmt.Errorf("decode bridge response: %w", err)
+	}
+	if response.Kind != "http_response" || response.Status < 200 || response.Status >= 300 {
+		return "", fmt.Errorf("bridge provider returned HTTP %s", response.StatusText)
+	}
+	var decoded chatResponse
+	if err := json.Unmarshal([]byte(response.Body), &decoded); err != nil {
 		return "", fmt.Errorf("decode provider response: %w", err)
 	}
 	if len(decoded.Choices) == 0 {

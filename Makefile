@@ -1,4 +1,4 @@
-.PHONY: all build install uninstall clean help test integration-test build-all lint-docs wasi wasi-test wasi-run
+.PHONY: all build install uninstall clean help test integration-test build-all lint-docs wasi wasi-test wasi-run wasi-bridge
 
 # Build variables
 BINARY_NAME=picoclaw
@@ -528,3 +528,7 @@ wasi-test:
 ## wasi-run: Run with explicit example preopens (provider networking is runtime-dependent)
 wasi-run: wasi
 	wasmtime run --dir examples/wasi::/config --dir examples/wasi/skills::/skills --dir /tmp/picoclaw-wasi-workspace::/workspace --env=OPENROUTER_API_KEY $(BUILD_DIR)/picoclaw-wasi.wasm
+
+## wasi-bridge: Run the WASI module with the restricted native HTTP bridge
+wasi-bridge: wasi
+	GOTOOLCHAIN=auto go run ./cmd/picoclaw-wasi-bridge --wasm $(BUILD_DIR)/picoclaw-wasi.wasm

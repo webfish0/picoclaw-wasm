@@ -16,7 +16,12 @@ Updated: 2026-09-11
   loading, rooted-path validation and OpenAI-compatible provider requests.
 - Added deterministic provider/path/secret tests, Make targets, example config
   and example `SKILL.md`.
+- Added and verified `picoclaw-wasi-bridge`, a native allowlisted HTTP adapter
+  that completes a real mock OpenAI-compatible request without adding sockets
+  or subprocess authority to the WASM module.
 - `make wasi` produced a 10.1 MiB WebAssembly MVP module.
+- Bridge measurements: 10.1 MiB WASM, 8.5 MiB native bridge, approximately
+  0.84 s cold end-to-end process time and 72.99 MiB peak RSS on this macOS host.
 
 ## Current blockers
 
@@ -29,6 +34,8 @@ Updated: 2026-09-11
   connect to a local mock socket. This is the active provider/network blocker.
 - Local Go source inspection confirms `net_fake.go` is selected for `wasip1`,
   so Wasmtime network flags cannot provide real host TCP to this module.
+- Direct in-module provider networking remains unavailable; the verified
+  working deployment currently requires the restricted native bridge.
 
 ## Tests and failures
 
@@ -42,13 +49,15 @@ Updated: 2026-09-11
 - `git diff --check`: passed.
 - Wasmtime 48.0.1 filesystem/skill smoke test passed with three explicit
   preopens; provider smoke test failed at DNS/loopback as documented.
+- `go test ./cmd/picoclaw-wasi-bridge`: bridge allowlist/response test passed.
+- Native bridge integration: mock request returned `bridge ok`.
 - The first `make wasi-test` attempt exposed the expected limitation that a
   macOS host cannot execute a WASI test binary directly (`exec format error`);
   the target now compiles the WASI test artifact and runs the tests natively.
 
 ## Next action
 
-Keep Phase 0 open until its corrected compatibility evidence is reviewed. Then
-evaluate a WASI sockets or Component Model HTTP path under Spin/Wasmtime, then
-implement the provider adapter that matches the chosen runtime. Do not mark the
-provider or runtime phases Done until a runtime-backed mock request succeeds.
+Keep the direct-network blocker open for Component Model/Spin evaluation, but
+use the verified bridge path for the prototype. Do not mark runtime evaluation
+complete until Spin/component options and the direct-vs-bridge decision are
+recorded on the board.

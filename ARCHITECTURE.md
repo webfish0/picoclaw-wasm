@@ -20,6 +20,14 @@ claimed feature. Evaluate Spin/WASI sockets or a Component Model HTTP adapter
 as the next provider path. OCI is distribution only; it does not replace
 runtime capability policy.
 
+The verified interim deployment is `picoclaw-wasi-bridge`: a native macOS
+helper launches Wasmtime, passes only the three declared preopens, receives a
+single provider request over the module's stdin/stdout protocol, enforces the
+provider host allowlist, performs HTTP, and returns only the response body.
+The bridge is not available to skills or model output and is not embedded in
+the WASM artifact. A future Component Model HTTP implementation can replace it
+without changing the agent/provider contract.
+
 Skills are untrusted prompt data in milestone 1: no scripts, shell commands or
 MCP references execute. Future WASM component skills receive explicit,
 non-inherited capabilities per skill. Model inference remains native on macOS
