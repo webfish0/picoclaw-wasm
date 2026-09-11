@@ -10,8 +10,9 @@ Updated: 2026-09-11
   ten native dependency paths; the exact failures are recorded in
   FEASIBILITY.md. The focused WASI entry point builds successfully.
 - Added repository-local feasibility, architecture, port-plan and agent rules.
-- Added eight fully specified draft items to the `wasm-claw` GitHub project,
-  including runtime decision and visible Issues-disabled blocker.
+- Added nine fully specified GitHub issues to the `wasm-claw` project, including
+  phase tasks, the runtime decision, and measurable blockers. Issues are now
+  enabled on the fork and duplicate draft cards were removed.
 - Implemented `cmd/picoclaw-wasi` with explicit config, instruction-only skill
   loading, rooted-path validation and OpenAI-compatible provider requests.
 - Added deterministic provider/path/secret tests, Make targets, example config
@@ -27,9 +28,6 @@ Updated: 2026-09-11
 
 ## Current blockers
 
-- GitHub Issues are disabled on `webfish0/picoclaw-wasm`; draft project items
-  are the active workaround. Human must enable Issues or confirm draft-only
-  governance.
 - Wasmtime 48.0.1 is installed and executes the module with explicit preopens;
   the measured cold run was about 70 ms in the local test.
 - Go `wasip1` under Wasmtime could not resolve OpenRouter DNS and could not
