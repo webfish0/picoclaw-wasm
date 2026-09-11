@@ -67,3 +67,20 @@ func TestProviderRejectsHostNotInConfiguredAllowlist(t *testing.T) {
 		t.Fatalf("unexpected error: %v", err)
 	}
 }
+
+func TestPersistPromptIsWorkspaceBound(t *testing.T) {
+	root := t.TempDir()
+	if err := persistPrompt(root, "hello"); err != nil {
+		t.Fatal(err)
+	}
+	b, err := os.ReadFile(filepath.Join(root, "last_prompt.txt"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(b) != "hello\n" {
+		t.Fatalf("persisted prompt = %q", b)
+	}
+	if err := persistPrompt(filepath.Join(root, "..", "escape"), "no"); err == nil {
+		t.Fatal("expected workspace traversal rejection")
+	}
+}

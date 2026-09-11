@@ -19,6 +19,8 @@ Updated: 2026-09-11
 - Added and verified `picoclaw-wasi-bridge`, a native allowlisted HTTP adapter
   that completes a real mock OpenAI-compatible request without adding sockets
   or subprocess authority to the WASM module.
+- Added a workspace-bound prompt persistence check, proving the prototype uses
+  the declared read/write workspace capability without implicit home/temp paths.
 - `make wasi` produced a 10.1 MiB WebAssembly MVP module.
 - Bridge measurements: 10.1 MiB WASM, 8.5 MiB native bridge, approximately
   0.84 s cold end-to-end process time and 72.99 MiB peak RSS on this macOS host.

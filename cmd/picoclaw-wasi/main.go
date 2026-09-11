@@ -70,6 +70,9 @@ func main() {
 	if err := validateRoot(cfg.Workspace, "workspace"); err != nil {
 		fail(err)
 	}
+	if err := persistPrompt(cfg.Workspace, prompt); err != nil {
+		fail(err)
+	}
 	answer, err := callProvider(cfg, skillText, prompt)
 	if err != nil {
 		fail(err)
@@ -123,6 +126,17 @@ func validateRoot(path, name string) error {
 func validateRelative(path string) error {
 	if path == "" || path == "." || filepath.IsAbs(path) || path == ".." || strings.HasPrefix(path, ".."+string(filepath.Separator)) {
 		return errors.New("path traversal is forbidden")
+	}
+	return nil
+}
+
+func persistPrompt(root, prompt string) error {
+	if err := validateRoot(root, "workspace"); err != nil {
+		return err
+	}
+	path := filepath.Join(root, "last_prompt.txt")
+	if err := os.WriteFile(path, []byte(prompt+"\n"), 0o600); err != nil {
+		return fmt.Errorf("write workspace: %w", err)
 	}
 	return nil
 }
