@@ -30,8 +30,9 @@ Updated: 2026-09-11
 
 - Wasmtime 48.0.1 is installed and executes the module with explicit preopens;
   the measured cold run was about 70 ms in the local test.
-- Go `wasip1` under Wasmtime could not resolve OpenRouter DNS and could not
-  connect to a local mock socket. This is the active provider/network blocker.
+- Direct Go `wasip1` networking remains unavailable under Wasmtime; the
+  limitation is resolved for the milestone through the restricted bridge and is
+  tracked as follow-on issue #10.
 - Local Go source inspection confirms `net_fake.go` is selected for `wasip1`,
   so Wasmtime network flags cannot provide real host TCP to this module.
 - Direct in-module provider networking remains unavailable; the verified
