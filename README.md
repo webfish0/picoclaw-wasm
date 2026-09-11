@@ -65,6 +65,11 @@ printf 'hello\n' | LOCAL_TEST_KEY=not-a-real-key \
 The bridge is a temporary deployment adapter; its allowlist is enforced in
 native code and it does not expose arbitrary fetch or host filesystem access to
 the module.
+
+Spin evaluation: Spin 4.1.0 is suitable for a future Component Model HTTP
+artifact, but `spin up -f build/picoclaw-wasi.wasm` rejects this Go Preview 1
+CLI module because it has no supported HTTP handler export. It is not a
+drop-in runner for the current artifact.
 See `FEASIBILITY.md`, `ARCHITECTURE.md`, `WASI_PORT_PLAN.md` and
 `PORT_STATUS.md` for the compatibility assessment, capability model and current
 runtime blockers.
