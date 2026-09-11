@@ -13,6 +13,8 @@ Updated: 2026-09-11
 - Added nine fully specified GitHub issues to the `wasm-claw` project, including
   phase tasks, the runtime decision, and measurable blockers. Issues are now
   enabled on the fork and duplicate draft cards were removed.
+- Adopted milestone-1 runtime decision: Wasmtime plus the restricted native
+  HTTP bridge. Direct Component Model networking is follow-on issue #10.
 - Implemented `cmd/picoclaw-wasi` with explicit config, instruction-only skill
   loading, rooted-path validation and OpenAI-compatible provider requests.
 - Added deterministic provider/path/secret tests, Make targets, example config
