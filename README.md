@@ -70,6 +70,9 @@ Spin evaluation: Spin 4.1.0 is suitable for a future Component Model HTTP
 artifact, but `spin up -f build/picoclaw-wasi.wasm` rejects this Go Preview 1
 CLI module because it has no supported HTTP handler export. It is not a
 drop-in runner for the current artifact.
+
+Optional OCI distribution guidance is in `examples/oci/README.md`. OCI is not
+required for local execution and does not replace runtime capability policy.
 See `FEASIBILITY.md`, `ARCHITECTURE.md`, `WASI_PORT_PLAN.md` and
 `PORT_STATUS.md` for the compatibility assessment, capability model and current
 runtime blockers.

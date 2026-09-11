@@ -56,6 +56,8 @@ Updated: 2026-09-11
 - Spin 4.1.0 smoke test: direct `spin up -f build/picoclaw-wasi.wasm` failed
   with the expected missing supported HTTP/component export; this is recorded
   as a runtime compatibility result, not a silent failure.
+- Added optional OCI distribution guidance. `oras` is not installed locally, so
+  no registry push or digest verification is claimed.
 - The first `make wasi-test` attempt exposed the expected limitation that a
   macOS host cannot execute a WASI test binary directly (`exec format error`);
   the target now compiles the WASI test artifact and runs the tests natively.
