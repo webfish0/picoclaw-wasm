@@ -1,0 +1,30 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>PicoClaw WASI Local Model UAT</title>
+<h1>PicoClaw WASI local model UAT</h1>
+<p>This page exercises the OpenAI-compatible chat endpoint used by the WASI prototype.</p>
+<label for="prompt">Prompt</label><br>
+<textarea id="prompt" rows="4" cols="70">Reply with exactly: BROWSER_UAT_OK</textarea><br>
+<button id="send">Send test prompt</button>
+<pre id="status">Ready</pre>
+<script>
+const endpoint = "http://127.0.0.1:11434/v1/chat/completions";
+const model = "1kb/huihui-qwen3.8-27b-mlx";
+document.querySelector("#send").addEventListener("click", async () => {
+  const status = document.querySelector("#status");
+  status.textContent = "Sending request...";
+  try {
+    const response = await fetch(endpoint, {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({model, messages: [{role: "user", content: document.querySelector("#prompt").value}]})
+    });
+    const body = await response.text();
+    if (!response.ok) throw new Error(`HTTP ${response.status}: ${body}`);
+    const parsed = JSON.parse(body);
+    status.textContent = `PASS\nmodel: ${parsed.model || model}\nresponse: ${parsed.choices?.[0]?.message?.content || body}`;
+  } catch (error) {
+    status.textContent = `FAIL\n${error}`;
+  }
+});
+</script>
