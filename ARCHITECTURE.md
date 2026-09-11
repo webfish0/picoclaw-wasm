@@ -7,17 +7,17 @@ The first artifact is a single-request WASI module:
 Host-granted capabilities are limited to read-only `/config`, read-only
 `/skills`, read/write `/workspace`, selected environment variables/secrets, and
 an outbound provider allowlist (`api.openrouter.ai` plus one configured local
-model host). The current Go Preview 1 module has no host-network provider path;
-the eventual component/bridge must enforce this allowlist. There is no
+model host). The current Go Preview 1 module has no direct host-network provider
+path; the native bridge enforces this allowlist for the milestone. There is no
 home-directory preopen, process capability, listener, PTY, Unix socket,
 arbitrary fetch or stdio MCP.
 
 Use Wasmtime first for the filesystem/stdin/stdout prototype because explicit
 WASI Preview 1 preopens and environment controls are straightforward. Runtime
 testing shows that this Go Preview 1 module cannot currently reach DNS or
-localhost sockets, so provider calls are a verified blocker rather than a
-claimed feature. Evaluate Spin/WASI sockets or a Component Model HTTP adapter
-as the next provider path. OCI is distribution only; it does not replace
+localhost sockets directly. The restricted native bridge is the verified
+milestone provider path. Evaluate Spin/WASI sockets or a Component Model HTTP
+adapter as the next direct-network path. OCI is distribution only; it does not replace
 runtime capability policy.
 
 The verified interim deployment is `picoclaw-wasi-bridge`: a native macOS

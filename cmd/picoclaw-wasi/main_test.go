@@ -59,6 +59,18 @@ func TestMissingSecret(t *testing.T) {
 	}
 }
 
+func TestLocalProviderDoesNotRequireSecret(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		_, _ = w.Write([]byte(`{"choices":[{"message":{"role":"assistant","content":"local ok"}}]}`))
+	}))
+	defer server.Close()
+	got, err := callProvider(config{Model: "local", APIBase: server.URL, APIKeyEnv: "MISSING_LOCAL_KEY", AllowedHost: "127.0.0.1"}, "", "hello")
+	if err != nil || got != "local ok" {
+		t.Fatalf("local callProvider = %q, %v", got, err)
+	}
+}
+
 func TestProviderRejectsHostNotInConfiguredAllowlist(t *testing.T) {
 	os.Setenv("TEST_KEY", "test")
 	defer os.Unsetenv("TEST_KEY")

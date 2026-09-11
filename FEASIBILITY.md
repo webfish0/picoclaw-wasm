@@ -18,8 +18,8 @@ boundary; the focused entry point intentionally excludes those integrations.
 | Config | `pkg/config`, JSON/YAML, env-backed secrets | Compile-compatible; implicit home paths are unsafe | Explicit `/config` and runtime secret injection |
 | Skills | `pkg/skills` reads workspace/global/builtin `SKILL.md` | Instruction-only loading is portable | Read-only explicit `/skills`; disable install/registry first |
 | Workspace | OS files, JSONL/session/state/media | Portable with preopens | Rooted adapter; reject absolute and parent paths |
-| Providers | HTTP/OpenAI-compatible and OpenRouter | Not reachable from Go `wasip1` Preview 1 `net` today; Go uses `net_fake.go` | Component Model HTTP/sockets or narrow host bridge |
-| Local models | Configurable `api_base` | Loopback unavailable through current Go Preview 1 module | Explicit component/sockets adapter or host bridge |
+| Providers | HTTP/OpenAI-compatible and OpenRouter | Directly unreachable from Go `wasip1` Preview 1 `net`; restricted native bridge works | Component Model HTTP/sockets for direct networking; bridge is milestone adapter |
+| Local models | Configurable `api_base` | Direct loopback unavailable through current Go Preview 1 module; bridge reaches Ollama | Explicit component/sockets adapter or restricted host bridge |
 | Spin | Spin 4.1.0 accepts WASM/component applications | Direct run of this module fails: it exports no supported HTTP handler | Use a Component Model HTTP artifact; keep Go module on Wasmtime/bridge |
 | Listeners | `net.Listen`, gateway and channels | Not assumed in Preview 1 | stdin/stdout first; host HTTP later |
 | Processes | `os/exec`, process hooks, shell tools | Must be unavailable | Compile out and return unsupported errors |
@@ -35,7 +35,9 @@ The focused prototype has no compiler blocker. The full-tree build has the
 dependency blockers listed above. Runtime evidence with Wasmtime 48.0.1 shows
 that explicit preopens and skill/config loading work, but Go's `wasip1`
 Preview 1 networking path could not resolve `api.openrouter.ai` and could not
-connect to a local `127.0.0.1` mock server. This blocks the requested provider
-path in the current Preview 1 module. The next technical investigation is a
-WASI sockets or Component Model HTTP path, while preserving secure no-network
-failure behavior.
+connect to a local `127.0.0.1` mock server. The restricted native bridge
+resolves this for milestone 1 without granting sockets to the module: a full
+browser UAT through the bridge reached the configured Ollama model. The
+remaining blocker is direct in-module networking, which requires WASI sockets
+or a Component Model HTTP path while preserving secure no-network failure
+behavior.
