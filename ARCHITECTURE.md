@@ -33,6 +33,11 @@ MCP references execute. Future WASM component skills receive explicit,
 non-inherited capabilities per skill. Model inference remains native on macOS
 through OpenRouter or an OpenAI-compatible Ollama/MLX/LM Studio endpoint.
 
+Spin 4.1.0 was tested with the generated module and rejected it because the
+module exports no supported `wasi:http` or `fermyon:spin/inbound-http` handler.
+Spin is therefore a valid future HTTP/component runtime, not a drop-in runner
+for this Go Preview 1 CLI artifact.
+
 ## Follow-on capability plan
 
 Instruction-only skills are supported now. Skills containing scripts, shell

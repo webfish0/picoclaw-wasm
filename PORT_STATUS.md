@@ -51,6 +51,9 @@ Updated: 2026-09-11
   preopens; provider smoke test failed at DNS/loopback as documented.
 - `go test ./cmd/picoclaw-wasi-bridge`: bridge allowlist/response test passed.
 - Native bridge integration: mock request returned `bridge ok`.
+- Spin 4.1.0 smoke test: direct `spin up -f build/picoclaw-wasi.wasm` failed
+  with the expected missing supported HTTP/component export; this is recorded
+  as a runtime compatibility result, not a silent failure.
 - The first `make wasi-test` attempt exposed the expected limitation that a
   macOS host cannot execute a WASI test binary directly (`exec format error`);
   the target now compiles the WASI test artifact and runs the tests natively.

@@ -20,6 +20,7 @@ boundary; the focused entry point intentionally excludes those integrations.
 | Workspace | OS files, JSONL/session/state/media | Portable with preopens | Rooted adapter; reject absolute and parent paths |
 | Providers | HTTP/OpenAI-compatible and OpenRouter | Not reachable from Go `wasip1` Preview 1 `net` today; Go uses `net_fake.go` | Component Model HTTP/sockets or narrow host bridge |
 | Local models | Configurable `api_base` | Loopback unavailable through current Go Preview 1 module | Explicit component/sockets adapter or host bridge |
+| Spin | Spin 4.1.0 accepts WASM/component applications | Direct run of this module fails: it exports no supported HTTP handler | Use a Component Model HTTP artifact; keep Go module on Wasmtime/bridge |
 | Listeners | `net.Listen`, gateway and channels | Not assumed in Preview 1 | stdin/stdout first; host HTTP later |
 | Processes | `os/exec`, process hooks, shell tools | Must be unavailable | Compile out and return unsupported errors |
 | MCP | Stdio subprocesses plus remote transports | Stdio incompatible with goal | Exclude stdio; defer remote MCP |
