@@ -72,6 +72,10 @@ Updated: 2026-09-11
   POST → `picoclaw-wasi-http` → restricted bridge → Wasmtime → WASI module →
   Ollama model `1kb/huihui-qwen3.8-27b-mlx`; visible response was
   `BROWSER_UAT_OK`. The earlier direct browser page was not this path.
+- Fresh macOS measurements: `build/picoclaw-wasi.wasm` is 10,604,882 bytes;
+  idle Wasmtime RSS was 70.9 MiB; one local-model bridge request peaked at
+  73.1 MiB and completed in 9.76 s (including local model inference). Docker
+  is not installed on this host, so no Docker baseline is claimed.
 
 ## Next action
 
