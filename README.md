@@ -22,6 +22,39 @@
 
 </div>
 
+## WASI prototype
+
+This fork includes a minimal `picoclaw-wasi` entry point. It is a separate,
+single-request WASI program and does not expose the full channel, subprocess,
+MCP, PTY or listener surface of the native CLI.
+
+Build and test it with:
+
+```sh
+make wasi
+make wasi-test
+```
+
+The prototype expects configuration, skills and workspace directories to be
+mounted explicitly by the runtime. The example is in `examples/wasi/`. With
+Wasmtime installed, use a launch equivalent to:
+
+```sh
+wasmtime run --dir examples/wasi::/config \
+  --dir examples/wasi/skills::/skills \
+  --dir /tmp/picoclaw-wasi-workspace::/workspace \
+  --env=OPENROUTER_API_KEY build/picoclaw-wasi.wasm
+```
+
+The API key is injected at runtime; never place it in the config or WASM file.
+The current Go `wasip1` module can load files and skills under Wasmtime, but
+does not yet reach DNS or localhost sockets; the provider runtime blocker is
+tracked on the project board. Do not enable unrestricted host networking as a
+workaround without updating the capability design and tests.
+See `FEASIBILITY.md`, `ARCHITECTURE.md`, `WASI_PORT_PLAN.md` and
+`PORT_STATUS.md` for the compatibility assessment, capability model and current
+runtime blockers.
+
 ---
 
 > **PicoClaw** is an independent open-source project initiated by [Sipeed](https://sipeed.com), written entirely in **Go** from scratch — not a fork of OpenClaw, NanoBot, or any other project.
