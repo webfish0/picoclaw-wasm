@@ -54,6 +54,12 @@ Updated: 2026-09-11
   preopens; provider smoke test failed at DNS/loopback as documented.
 - `go test ./cmd/picoclaw-wasi-bridge`: bridge allowlist/response test passed.
 - Native bridge integration: mock request returned `bridge ok`.
+- Provider examples now target OpenRouter model
+  `nvidia/nemotron-3-ultra-550b-a55b:free` with runtime secret `ORkey`, plus
+  local model `1kb/huihui-qwen3.8-27b-mlx` through Ollama at `127.0.0.1:11434`.
+- Real OpenRouter smoke attempt used `ORkey` without logging it, but failed
+  before HTTP because this host could not resolve `api.openrouter.ai`; no live
+  provider success is claimed.
 - Spin 4.1.0 smoke test: direct `spin up -f build/picoclaw-wasi.wasm` failed
   with the expected missing supported HTTP/component export; this is recorded
   as a runtime compatibility result, not a silent failure.

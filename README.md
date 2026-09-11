@@ -66,6 +66,11 @@ The bridge is a temporary deployment adapter; its allowlist is enforced in
 native code and it does not expose arbitrary fetch or host filesystem access to
 the module.
 
+The OpenRouter example uses model `nvidia/nemotron-3-ultra-550b-a55b:free` and
+the runtime secret variable `ORkey`. For a local Ollama-compatible server, use
+`examples/wasi/ollama-config.json`, which targets
+`1kb/huihui-qwen3.8-27b-mlx` at `127.0.0.1:11434`.
+
 Spin evaluation: Spin 4.1.0 is suitable for a future Component Model HTTP
 artifact, but `spin up -f build/picoclaw-wasi.wasm` rejects this Go Preview 1
 CLI module because it has no supported HTTP handler export. It is not a

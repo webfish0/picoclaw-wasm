@@ -1,0 +1,8 @@
+{
+  "model": "1kb/huihui-qwen3.8-27b-mlx",
+  "api_base": "http://127.0.0.1:11434/v1",
+  "api_key_env": "OLLAMA_API_KEY",
+  "skills_root": "/skills",
+  "workspace": "/workspace",
+  "allowed_host": "127.0.0.1"
+}
