@@ -1,0 +1,13 @@
+{
+  "status": "pass",
+  "commit": "36ed07e4",
+  "artifact_sha256": "328ccc8eb6e53d312caca80ff766c0d238075ef109855631016a34f7b993e472",
+  "missing_secret": "fail-closed-exact-variable-error",
+  "sequential_requests": 2,
+  "concurrent_requests": 20,
+  "restart_persistence": "pass",
+  "fixtures": "read-only",
+  "deterministic_response": "BROWSER_UAT_OK",
+  "sentinel_matches": 0,
+  "secret_value_recorded": false
+}
