@@ -24,3 +24,14 @@ and fragments are rejected. The exact outbound grant remains in `spin.toml`.
 The generated Spin export glue is not host-testable on this macOS target, so
 the focused policy package is tested separately and the component is verified
 with Spin build/doctor and black-box runtime checks.
+
+Run the reproducible capability gate with:
+
+```sh
+SPIN_ACCEPTANCE_OUT=/tmp/spin-acceptance.json ./examples/spin-p3-smoke/acceptance.sh
+```
+
+It rebuilds and diagnoses the component, runs policy tests, checks the WIT
+imports/exports, records one artifact hash, and performs a zero-match scan
+using a mode-0600 temporary secret file. Runtime restart/concurrency evidence
+must be added by the launcher UAT harness before this capability issue closes.
