@@ -14,6 +14,7 @@ PATH="${SPIN_GO_BIN:-/tmp/picoclaw-spin-native-arm64/go/bin}:$PATH" GOTOOLCHAIN=
 if spin up --from spin.toml --listen "127.0.0.1:$port" --runtime-config-file "$runtime_cfg" >"$tmp/missing.stdout" 2>"$tmp/missing.stderr"; then
   echo '{"status":"fail","reason":"missing secret did not fail closed"}' >"$out"; exit 1
 fi
+grep -q 'no provider resolved required variable' "$tmp/missing.stderr"
 spin up --from spin.toml --listen "127.0.0.1:$port" --env "SPIN_PROBE_MOCK_URL=$mock_url" --variable "probe_secret=@$secret" --runtime-config-file "$runtime_cfg" >"$tmp/spin.stdout" 2>"$tmp/spin.stderr" & spin_pid=$!
 for _ in {1..100}; do curl -sS "http://127.0.0.1:$port/probe" -o /dev/null >/dev/null 2>&1 && break; sleep 0.1; done
 request() { curl -fsS -X POST "http://127.0.0.1:$port/probe" -H "X-Request-ID: $1" --data "$1"; }
