@@ -19,6 +19,7 @@ for _ in {1..100}; do curl -sS "http://127.0.0.1:$port/probe" -o /dev/null >/dev
 request() { curl -fsS -X POST "http://127.0.0.1:$port/probe" -H "X-Request-ID: $1" --data "$1"; }
 first=$(request runtime-seq-1); second=$(request runtime-seq-2)
 grep -q 'request_id=runtime-seq-1' <<<"$first"; grep -q 'request_id=runtime-seq-2' <<<"$second"
+grep -q 'fixtures=read-only' <<<"$first"; grep -q 'BROWSER_UAT_OK' <<<"$first"
 request_pids=()
 for n in $(seq 1 20); do request "runtime-concurrent-$n" >"$tmp/response-$n" & request_pids+=("$!"); done
 for pid in "${request_pids[@]}"; do wait "$pid"; done
