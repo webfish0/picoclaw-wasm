@@ -1,14 +1,11 @@
 package main
 
 import (
-	"crypto/rand"
-	"encoding/hex"
 	"fmt"
 	"io"
 	"log"
 	"net/http"
 	"os"
-	"regexp"
 	"strings"
 
 	spinhttp "github.com/spinframework/spin-go-sdk/v3/http"
@@ -17,30 +14,13 @@ import (
 	"github.com/webfish0/picoclaw-wasm/examples/spin-p3-smoke/internal/probe"
 )
 
-var requestIDPattern = regexp.MustCompile(`^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$`)
-
-func requestID(r *http.Request) (string, error) {
-	id := strings.TrimSpace(r.Header.Get("X-Request-ID"))
-	if id != "" {
-		if !requestIDPattern.MatchString(id) {
-			return "", fmt.Errorf("invalid request id")
-		}
-		return id, nil
-	}
-	var bytes [16]byte
-	if _, err := rand.Read(bytes[:]); err != nil {
-		return "", fmt.Errorf("generate request id: %w", err)
-	}
-	return "probe-" + hex.EncodeToString(bytes[:]), nil
-}
-
 func init() {
 	spinhttp.Handle(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost || r.URL.Path != "/probe" {
 			http.Error(w, "not found", http.StatusNotFound)
 			return
 		}
-		correlationID, err := requestID(r)
+		correlationID, err := probe.RequestID(r)
 		if err != nil {
 			http.Error(w, "invalid request id", http.StatusBadRequest)
 			return
