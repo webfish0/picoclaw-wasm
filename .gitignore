@@ -17,6 +17,7 @@ cmd/**/workspace
 # PicoClaw
 .picoclaw/
 config.json
+!examples/spin-p3-smoke/fixtures/config.json
 sessions/
 build/
 
