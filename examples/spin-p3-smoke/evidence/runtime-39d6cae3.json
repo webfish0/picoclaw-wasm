@@ -1,0 +1,14 @@
+{
+  "commit": "39d6cae3",
+  "artifact_sha256": "7916e1d19eae9db80af4cd00bd185cbfb264e097dc3b89b3399c1a49824c8b61",
+  "mock": "127.0.0.1:18080",
+  "missing_secret": "fail-closed",
+  "sequential_requests": 2,
+  "concurrent_requests": 20,
+  "restart_persistence": "preexisting=true",
+  "fixtures": "read-only",
+  "deterministic_response": "BROWSER_UAT_OK",
+  "sentinel_matches": 0,
+  "secret_value_recorded": false,
+  "status": "pass"
+}

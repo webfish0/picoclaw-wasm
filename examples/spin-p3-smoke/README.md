@@ -35,3 +35,7 @@ It rebuilds and diagnoses the component, runs policy tests, checks the WIT
 imports/exports, records one artifact hash, and performs a zero-match scan
 using a mode-0600 temporary secret file. Runtime restart/concurrency evidence
 must be added by the launcher UAT harness before this capability issue closes.
+
+The latest secret-free runtime transcript is committed at
+`evidence/runtime-39d6cae3.json`; it is tied to commit `39d6cae3` and records
+the exact artifact hash and result counts without recording the sentinel.
