@@ -1,6 +1,6 @@
 # Port status
 
-Updated: 2026-09-11
+Updated: 2026-09-12
 
 ## Completed
 
@@ -15,6 +15,14 @@ Updated: 2026-09-11
   enabled on the fork and duplicate draft cards were removed.
 - Adopted milestone-1 runtime decision: Wasmtime plus the restricted native
   HTTP bridge. Direct Component Model networking is follow-on issue #10.
+- Sol triage of Spin spike #14 isolated the local P3 outbound failure: the
+  SDK v3.0.0 request converter rejects an origin-only mock URL because its
+  path is empty. Keeping the exact loopback grant and canonicalising the
+  runtime URL to `http://127.0.0.1:18080/` returned `SPIN_P3_OK` directly
+  through Spin 4.1.0 under the required componentize-go v0.3.3 pin.
+- Split the remaining #14 work into bounded board sub-issues #18–#21 for
+  reproducibility, outbound-denial evidence, variable/file/store/isolation
+  evidence, and the final WIT/measurement/Sol gate.
 - Implemented `cmd/picoclaw-wasi` with explicit config, instruction-only skill
   loading, rooted-path validation and OpenAI-compatible provider requests.
 - Added deterministic provider/path/secret tests, Make targets, example config
@@ -39,6 +47,25 @@ Updated: 2026-09-11
   so Wasmtime network flags cannot provide real host TCP to this module.
 - Direct in-module provider networking remains unavailable; the verified
   working deployment currently requires the restricted native bridge.
+- Spin spike #14 is resolvable but not complete. The checked-out smoke module
+  still has incomplete test wiring, no complete
+  negative-network/secret/storage/concurrency evidence, no WIT inspection or
+  measurements, and no final Sol GO/NO-GO for #11.
+- `wasm-tools` v1.259.0 is now installed and
+  `wasm-tools component wit examples/spin-p3-smoke/main.wasm` confirms the
+  expected `wasi:http/handler@0.3.0-rc-2026-03-15` export and standard WASI
+  HTTP client imports. Runtime capability effectiveness still requires the
+  negative matrix.
+- The isolated Spin P3 smoke now includes the Sol-approved required variable,
+  read-only fixture mappings, and one named persistent `workspace` KV store.
+  WIT inspection confirms `spin:variables/variables@3.0.0` and
+  `spin:key-value/key-value@3.0.0`; missing-variable startup fails closed and
+  the supplied-variable direct mock request returns HTTP 200 with a matched
+  correlation ID. Restart/concurrency, sentinel scans, and final Sol GO remain
+  outstanding.
+- Prerequisite #13 has a successful native ARM64 template build/start, but its
+  remaining WIT and reproducibility evidence must be completed before #14 can
+  close.
 
 ## Tests and failures
 
@@ -72,6 +99,20 @@ Updated: 2026-09-11
 - Spin 4.1.0 smoke test: direct `spin up -f build/picoclaw-wasi.wasm` failed
   with the expected missing supported HTTP/component export; this is recorded
   as a runtime compatibility result, not a silent failure.
+- Focused #14 diagnostic: exact-pinned Spin P3 build and `spin doctor` passed;
+  the origin-only loopback URL returned the classified error
+  `HTTP request URI invalid`, while the same exact origin with path `/`
+  returned HTTP 200 with `SPIN_P3_OK` and `BROWSER_UAT_OK`. The 10,407,829-byte
+  artifact SHA-256 was
+  `c693b46a2509ca15613a761b0333f3c14402d01ed1df6666a77e88bd679d5acd`.
+- Spin P3 direct cold-start measurement against the deterministic loopback mock
+  passed 10/10 on port 3030: 92, 149, 153, 155, 156, 157, 160, 160, 161,
+  165 ms; median 156 ms and observed nearest-rank p95 165 ms. Each request
+  used a unique correlation ID and the legacy bridge/Wasmtime processes were
+  stopped.
+- Native `go test .` for the nested P3 component remains unavailable because
+  SDK-generated export glue has a missing function body on the host target;
+  #18 must extract host-testable logic and use a black-box runtime check.
 - Added optional OCI distribution guidance. `oras` is not installed locally, so
   no registry push or digest verification is claimed.
 - The first `make wasi-test` attempt exposed the expected limitation that a
@@ -88,7 +129,7 @@ Updated: 2026-09-11
 
 ## Next action
 
-Keep the direct-network blocker open for Component Model/Spin evaluation, but
-use the verified bridge path for the prototype. The browser UAT now covers the
-milestone path; remaining work is follow-on direct Component Model networking
-and broader channel compatibility.
+Keep #11 blocked and execute #14's bounded sequence: #18, then #19 and #20,
+then #21 with final Sol review. Formally complete #13 before #21. Continue to
+use the verified bridge path for the existing prototype until the direct Spin
+capability evidence passes; #15 browser UAT remains downstream.

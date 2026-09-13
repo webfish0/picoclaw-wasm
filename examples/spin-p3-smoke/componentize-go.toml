@@ -1,0 +1,2 @@
+worlds = ["spin:up/http-trigger@4.0.0"]
+wit_paths = ["wit"]
