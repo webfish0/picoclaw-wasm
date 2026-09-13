@@ -127,9 +127,20 @@ Updated: 2026-09-12
   73.1 MiB and completed in 9.76 s (including local model inference). Docker
   is not installed on this host, so no Docker baseline is claimed.
 
+## Remediation checkpoint
+
+Commits `46b15621` and `18cc45f4` constrain and host-test request IDs and add
+a reproducible capability acceptance gate. The gate passed focused policy
+tests, Spin build/doctor, WIT checks, and a zero-match scan using a mode-0600
+temporary sentinel; artifact hash was
+`cd5de0679d220d6d92ca801bdecd5ee796569ef6940fef38c6fb432b28a38286`.
+This does not claim the remaining black-box restart/concurrency matrix or
+launcher/browser UAT.
+
 ## Next action
 
-Keep #11 blocked and execute #14's bounded sequence: #18, then #19 and #20,
-then #21 with final Sol review. Formally complete #13 before #21. Continue to
-use the verified bridge path for the existing prototype until the direct Spin
-capability evidence passes; #15 browser UAT remains downstream.
+Keep #11 blocked and complete the runtime restart/concurrency and denied-
+resource harness for #20, then #21 with final Sol re-review. Formally complete
+#13 before #21. Continue to use the verified bridge path for the existing
+prototype until direct Spin launcher integration and #15 real-browser UAT pass;
+human approval remains required before merge.
