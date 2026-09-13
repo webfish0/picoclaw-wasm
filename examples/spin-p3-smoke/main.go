@@ -43,11 +43,17 @@ func init() {
 				return
 			}
 		}
-		if err := store.Set("request/"+correlationID, []byte(correlationID)); err != nil {
+		key := "request/" + correlationID
+		preexisting, err := store.Exists(key)
+		if err != nil {
 			http.Error(w, "probe storage unavailable", http.StatusServiceUnavailable)
 			return
 		}
-		stored, err := store.Get("request/" + correlationID)
+		if err := store.Set(key, []byte(correlationID)); err != nil {
+			http.Error(w, "probe storage unavailable", http.StatusServiceUnavailable)
+			return
+		}
+		stored, err := store.Get(key)
 		if err != nil || string(stored) != correlationID {
 			http.Error(w, "probe storage unavailable", http.StatusServiceUnavailable)
 			return
@@ -95,7 +101,7 @@ func init() {
 		w.Header().Set("Content-Type", "text/plain")
 		w.Header().Set("X-Request-ID", correlationID)
 		w.WriteHeader(http.StatusOK)
-		_, _ = fmt.Fprintf(w, "SPIN_P3_OK\nrequest_id=%s\nstored_id=%s\nprevious_id=%s\nfixtures=read-only\n%s", correlationID, stored, previous, strings.TrimSpace(string(body)))
+		_, _ = fmt.Fprintf(w, "SPIN_P3_OK\nrequest_id=%s\nstored_id=%s\npreexisting=%t\nprevious_id=%s\nfixtures=read-only\n%s", correlationID, stored, preexisting, previous, strings.TrimSpace(string(body)))
 	})
 }
 

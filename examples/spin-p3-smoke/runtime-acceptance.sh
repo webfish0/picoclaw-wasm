@@ -24,11 +24,11 @@ request_pids=()
 for n in $(seq 1 20); do request "runtime-concurrent-$n" >"$tmp/response-$n" & request_pids+=("$!"); done
 for pid in "${request_pids[@]}"; do wait "$pid"; done
 for n in $(seq 1 20); do grep -q "request_id=runtime-concurrent-$n" "$tmp/response-$n"; done
-kill "$spin_pid"; wait "$spin_pid" 2>/dev/null || true; spin_pid=0
+kill "$spin_pid"; wait "$spin_pid" 2>/dev/null || true; spin_pid=0; sleep 1
 spin up --from spin.toml --listen "127.0.0.1:$port" --env "SPIN_PROBE_MOCK_URL=$mock_url" --variable "probe_secret=@$secret" --runtime-config-file "$runtime_cfg" >"$tmp/restart.stdout" 2>"$tmp/restart.stderr" & spin_pid=$!
 for _ in {1..100}; do curl -sS "http://127.0.0.1:$port/probe" -o /dev/null >/dev/null 2>&1 && break; sleep 0.1; done
-restart=$(request runtime-restart-1)
-grep -q 'request_id=runtime-restart-1' <<<"$restart"
+restart=$(request runtime-seq-1)
+grep -q 'preexisting=true' <<<"$restart"
 sentinel=$(<"$secret")
 if rg -n -F "$sentinel" "$tmp/spin.stdout" "$tmp/spin.stderr" "$tmp/restart.stdout" "$tmp/restart.stderr" "$tmp"/response-* main.wasm >/dev/null 2>&1; then echo '{"status":"fail","reason":"sentinel leaked"}' >"$out"; exit 1; fi
 hash=$(shasum -a 256 main.wasm | awk '{print $1}')
