@@ -49,6 +49,15 @@ func init() {
 			http.Error(w, "probe storage unavailable", http.StatusServiceUnavailable)
 			return
 		}
+		previous := ""
+		if preexisting {
+			old, getErr := store.Get(key)
+			if getErr != nil {
+				http.Error(w, "probe storage unavailable", http.StatusServiceUnavailable)
+				return
+			}
+			previous = string(old)
+		}
 		if err := store.Set(key, []byte(correlationID)); err != nil {
 			http.Error(w, "probe storage unavailable", http.StatusServiceUnavailable)
 			return
@@ -76,7 +85,6 @@ func init() {
 				return
 			}
 		}
-		previous := ""
 		mockURL := os.Getenv("SPIN_PROBE_MOCK_URL")
 		if mockURL == "" {
 			http.Error(w, "probe mock is not configured", http.StatusInternalServerError)
