@@ -1,0 +1,13 @@
+{
+  "status": "pass",
+  "source_commit": "57a6cdc9",
+  "artifact_sha256_tested": "4ee16eb07d3803389d3b67a14507a8b388a8a9dc144b4a2fbb6068effa434ea7",
+  "missing_secret": "fail-closed-exact-variable-error",
+  "sequential_requests": 2,
+  "concurrent_requests": 20,
+  "restart_persistence": "pass",
+  "denied_store_class_asserted": true,
+  "mock_owned": true,
+  "sentinel_matches": 0,
+  "tool_versions": {"spin": "4.1.0", "go": "1.25.6 darwin/amd64"}
+}
