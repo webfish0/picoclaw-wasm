@@ -5,13 +5,16 @@ tmp=$(mktemp -d "/tmp/picoclaw-spin-acceptance.XXXXXX")
 out=${SPIN_ACCEPTANCE_OUT:-"$root/runtime-acceptance-results.json"}
 port=${SPIN_ACCEPTANCE_PORT:-31080}; mock_port=31808
 base_url="http://127.0.0.1:$port"; mock_url="http://127.0.0.1:$mock_port/"
-spin_pid=0; mock_pid=0; missing_pid=0; spin_exit="not-stopped"; first_spin_pid=0; restart_spin_pid=0; first_spin_command=""; restart_spin_command=""; first_spin_exit=""; restart_spin_exit=""
+spin_pid=0; spin_listener_pid=0; mock_pid=0; missing_pid=0; spin_exit="not-stopped"; first_spin_pid=0; first_spin_listener_pid=0; restart_spin_pid=0; restart_spin_listener_pid=0; first_spin_command=""; first_spin_listener_command=""; restart_spin_command=""; restart_spin_listener_command=""; first_spin_exit=""; restart_spin_exit=""
 run_started=$(date -u '+%Y-%m-%dT%H:%M:%SZ'); commit=$(git rev-parse HEAD 2>/dev/null || printf unknown)
 status_before=$(git status --porcelain 2>/dev/null || true)
 state_path="$tmp/workspace.db"; runtime_cfg="$tmp/runtime-config.toml"; mock_receipts="$tmp/mock-receipts.jsonl"
 cleanup() {
   if [[ "$spin_pid" != 0 ]] && kill -0 "$spin_pid" 2>/dev/null; then
     command=$(ps -p "$spin_pid" -o command= 2>/dev/null || true); [[ "$command" == *"spin up"* ]] && kill "$spin_pid" 2>/dev/null || true
+  fi
+  if [[ "$spin_listener_pid" != 0 ]] && [[ "$spin_listener_pid" != "$spin_pid" ]] && kill -0 "$spin_listener_pid" 2>/dev/null; then
+    command=$(ps -p "$spin_listener_pid" -o command= 2>/dev/null || true); [[ "$command" == *"spin"* ]] && kill "$spin_listener_pid" 2>/dev/null || true
   fi
   if [[ "$mock_pid" != 0 ]] && kill -0 "$mock_pid" 2>/dev/null; then
     command=$(ps -p "$mock_pid" -o command= 2>/dev/null || true); [[ "$command" == *"$tmp/mock"* ]] && kill "$mock_pid" 2>/dev/null || true
@@ -34,17 +37,30 @@ start_spin() {
   else
     PATH="${SPIN_GO_BIN:-/tmp/picoclaw-spin-native-arm64/go/bin}:$PATH" GOTOOLCHAIN=local spin up --from spin.toml --listen "127.0.0.1:$port" --env "SPIN_PROBE_MOCK_URL=$mock_url" --runtime-config-file "$runtime_cfg" >"$tmp/$label.stdout" 2>"$tmp/$label.stderr" &
   fi
-  spin_pid=$!; owned "$spin_pid" "spin up"; local code; code=$(wait_http "$base_url/probe" "$tmp/$label.ready" || true)
+  spin_pid=$!; owned "$spin_pid" "spin up"; local code listener listener_ppid listener_command; code=$(wait_http "$base_url/probe" "$tmp/$label.ready" || true)
   if [[ "$code" == 000 ]]; then kill -0 "$spin_pid" 2>/dev/null && fail "$label did not become ready"; return 1; fi
-  owned "$spin_pid" "spin up"; lsof -nP -a -p "$spin_pid" -iTCP:"$port" -sTCP:LISTEN | grep -Fq ":$port" || fail "$label listener ownership mismatch"
+  owned "$spin_pid" "spin up"; spin_listener_pid=0
+  while read -r listener; do
+    [[ -n "$listener" ]] || continue
+    listener_ppid=$(ps -p "$listener" -o ppid= 2>/dev/null | tr -d ' '); listener_command=$(ps -p "$listener" -o command= 2>/dev/null || true)
+    if [[ "$listener" == "$spin_pid" || "$listener_ppid" == "$spin_pid" ]] && [[ "$listener_command" == *"spin"* ]]; then
+      spin_listener_pid=$listener; break
+    fi
+  done < <(lsof -nP -t -iTCP:"$port" -sTCP:LISTEN 2>/dev/null | sort -u)
+  [[ "$spin_listener_pid" != 0 ]] || fail "$label listener ownership mismatch"
+  if [[ "$label" == success ]]; then first_spin_listener_pid="$spin_listener_pid"; first_spin_listener_command=$(ps -p "$spin_listener_pid" -o command= 2>/dev/null || true); else restart_spin_listener_pid="$spin_listener_pid"; restart_spin_listener_command=$(ps -p "$spin_listener_pid" -o command= 2>/dev/null || true); fi
 }
 stop_spin() {
-  local label=$1 command exit_code; [[ "$spin_pid" != 0 ]] || return
+  local label=$1 command listener_command exit_code listener_owned=false; [[ "$spin_pid" != 0 ]] || return
   command=$(ps -p "$spin_pid" -o command= 2>/dev/null || true); [[ "$command" == *"spin up"* ]] || fail "refusing to stop unowned Spin pid=$spin_pid"
+  if [[ "$spin_listener_pid" != 0 ]] && [[ "$spin_listener_pid" != "$spin_pid" ]]; then
+    listener_command=$(ps -p "$spin_listener_pid" -o command= 2>/dev/null || true); [[ "$listener_command" == *"spin"* ]] || fail "refusing to stop unowned Spin listener pid=$spin_listener_pid"; listener_owned=true
+  fi
   if [[ "$label" == success ]]; then first_spin_command="$command"; else restart_spin_command="$command"; fi
   kill "$spin_pid" 2>/dev/null || true; set +e; wait "$spin_pid"; exit_code=$?; set -e; spin_exit="$label:$exit_code"; if [[ "$label" == success ]]; then first_spin_exit="$exit_code"; else restart_spin_exit="$exit_code"; fi
+  if [[ "$listener_owned" == true ]] && kill -0 "$spin_listener_pid" 2>/dev/null; then kill "$spin_listener_pid" 2>/dev/null || true; fi
   for _ in $(seq 1 50); do lsof -nP -iTCP:"$port" -sTCP:LISTEN >/dev/null 2>&1 || break; sleep 0.1; done
-  lsof -nP -iTCP:"$port" -sTCP:LISTEN >/dev/null 2>&1 && fail "Spin listener did not stop"; spin_pid=0
+  lsof -nP -iTCP:"$port" -sTCP:LISTEN >/dev/null 2>&1 && fail "Spin listener did not stop"; spin_pid=0; spin_listener_pid=0
 }
 request_file() {
   local id=$1 payload=$2 body=$3 status
@@ -104,11 +120,11 @@ spin_version=$(spin --version | head -1); go_version=$(go version); wasm_tools_v
 status_clean=$([[ -z "$status_before" ]] && printf true || printf false); mkdir -p "$(dirname "$out")"
 wit_summary=$(rg 'export wasi:http/handler|import spin:variables/variables@3.0.0|import spin:key-value/key-value@3.0.0' "$tmp/wit.txt" | tr '\n' ';')
 receipt_ids=$(jq -sc '[.[].receipt_id]' "$mock_receipts")
-python3 - "$out" "$commit" "$run_started" "$artifact_run_hash" "$artifact_run_bytes" "$manifest_hash" "$wit_hash" "$wit_summary" "$port" "$mock_port" "$mock_pid_record" "$mock_exit" "$mock_command" "$first_spin_pid" "$first_spin_command" "$first_spin_exit" "$restart_spin_pid" "$restart_spin_command" "$restart_spin_exit" "$state_path" "$config_before" "$config_after" "$skill_before" "$skill_after" "$receipt_count" "$receipt_ids" "$generated_id" "$generated_id_2" "$default_store_class" "$ungranted_store_class" "$final_map" "$scan_json" "$status_clean" "$spin_version" "$go_version" "$wasm_tools_version" "$curl_version" <<'PY'
+python3 - "$out" "$commit" "$run_started" "$artifact_run_hash" "$artifact_run_bytes" "$manifest_hash" "$wit_hash" "$wit_summary" "$port" "$mock_port" "$mock_pid_record" "$mock_exit" "$mock_command" "$first_spin_pid" "$first_spin_listener_pid" "$first_spin_command" "$first_spin_listener_command" "$first_spin_exit" "$restart_spin_pid" "$restart_spin_listener_pid" "$restart_spin_command" "$restart_spin_listener_command" "$restart_spin_exit" "$state_path" "$config_before" "$config_after" "$skill_before" "$skill_after" "$receipt_count" "$receipt_ids" "$generated_id" "$generated_id_2" "$default_store_class" "$ungranted_store_class" "$final_map" "$scan_json" "$status_clean" "$spin_version" "$go_version" "$wasm_tools_version" "$curl_version" <<'PY'
 import json,sys,platform
-(out,commit,started,artifact,artifact_bytes,manifest,wit,wit_summary,port,mock_port,mock_pid,mock_exit,mock_command,first_pid,first_command,first_exit,restart_pid,restart_command,restart_exit,state_path,cb,ca,sb,sa,receipts,receipt_ids,generated_id,generated_id_2,default_class,ungranted_class,final_map,scans,clean,spin_version,go_version,wasm_tools_version,curl_version)=sys.argv[1:]
+(out,commit,started,artifact,artifact_bytes,manifest,wit,wit_summary,port,mock_port,mock_pid,mock_exit,mock_command,first_pid,first_listener_pid,first_command,first_listener_command,first_exit,restart_pid,restart_listener_pid,restart_command,restart_listener_command,restart_exit,state_path,cb,ca,sb,sa,receipts,receipt_ids,generated_id,generated_id_2,default_class,ungranted_class,final_map,scans,clean,spin_version,go_version,wasm_tools_version,curl_version)=sys.argv[1:]
 cases=[{"id":generated_id,"kind":"generated","http":200,"foreign_value":False},{"id":generated_id_2,"kind":"generated","http":200,"foreign_value":False}]+[{"id":f"runtime-seq-{n}","kind":"sequential","http":200,"foreign_value":False} for n in (1,2)]+[{"id":f"runtime-concurrent-{n}","kind":"concurrent","http":200,"foreign_value":False} for n in range(1,21)]+[{"id":"runtime-seq-1","kind":"restart","http":200,"old_read":True,"foreign_value":False}]
-d={"status":"pass","started_utc":started,"commit":commit,"clean_checkout_before":clean=="true","host":{"os":platform.system(),"release":platform.release(),"architecture":platform.machine()},"tool_versions":{"spin":{"version":spin_version,"architecture":platform.machine()},"go":{"version":go_version,"architecture":platform.machine()},"wasm_tools":{"version":wasm_tools_version,"architecture":platform.machine()},"curl":{"version":curl_version,"architecture":platform.machine()}},"artifact":{"path":"examples/spin-p3-smoke/main.wasm","sha256":artifact,"bytes":int(artifact_bytes)},"manifest":{"sha256":manifest,"grants":{"outbound_hosts":["http://127.0.0.1:31808"],"variables":["probe_secret->secret"],"files":["fixtures/config.json->/fixtures/config.json","fixtures/SKILL.md->/fixtures/SKILL.md"],"key_value_stores":["workspace"]}},"wit":{"summary":wit_summary,"sha256":wit},"ports":{"spin_http":int(port),"mock_http":int(mock_port)},"processes":{"mock":{"pid":int(mock_pid),"command":mock_command,"exit":int(mock_exit)},"first_spin":{"pid":int(first_pid),"command":first_command,"exit":int(first_exit)},"restart_spin":{"pid":int(restart_pid),"command":restart_command,"exit":int(restart_exit)}},"state_path":state_path,"secret_cases":{"missing":{"result":"startup-denied","error":"no provider resolved required variable"},"empty":{"result":"request-denied"},"whitespace":{"result":"request-denied"},"injected_by":"file-path"},"requests":{"case_table":cases,"sequential":2,"concurrent":20,"restart":"old-read-before-overwrite","server_generated_ids":True,"generated_ids":[generated_id,generated_id_2],"foreign_values":False},"stores":{"default":default_class,"ungranted":ungranted_class},"fixtures":{"config_before":cb,"config_after":ca,"expected_config": "3d2f8c447b8118a666b13aa213c7d4d4c929529535058d23972787f60491db5e","skill_before":sb,"skill_after":sa,"expected_skill":"9ba8c0cd3778f38a9a55616ca0b88770f34ba40d81135e4cc3ac8f13618c783","writes_denied":True,"named_repo_file_denied":"spin.toml","denied_paths":["/etc/hosts","/fixtures/../config.json","/fixtures/other.txt","/spin.toml"]},"mock":{"owned":True,"receipt_count":int(receipts),"receipt_ids":json.loads(receipt_ids),"capture":"mock-receipts.jsonl"},"final_kv_map":json.loads(final_map),"secret_scan_counts":json.loads(scans),"secret_scan_self_check":0,"provenance":{"evidence":"generated directly by this clean runtime run","old_secret_value_recorded":False}}
+d={"status":"pass","started_utc":started,"commit":commit,"clean_checkout_before":clean=="true","host":{"os":platform.system(),"release":platform.release(),"architecture":platform.machine()},"tool_versions":{"spin":{"version":spin_version,"architecture":platform.machine()},"go":{"version":go_version,"architecture":platform.machine()},"wasm_tools":{"version":wasm_tools_version,"architecture":platform.machine()},"curl":{"version":curl_version,"architecture":platform.machine()}},"artifact":{"path":"examples/spin-p3-smoke/main.wasm","sha256":artifact,"bytes":int(artifact_bytes)},"manifest":{"sha256":manifest,"grants":{"outbound_hosts":["http://127.0.0.1:31808"],"variables":["probe_secret->secret"],"files":["fixtures/config.json->/fixtures/config.json","fixtures/SKILL.md->/fixtures/SKILL.md"],"key_value_stores":["workspace"]}},"wit":{"summary":wit_summary,"sha256":wit},"ports":{"spin_http":int(port),"mock_http":int(mock_port)},"processes":{"mock":{"pid":int(mock_pid),"command":mock_command,"exit":int(mock_exit)},"first_spin":{"pid":int(first_pid),"listener_pid":int(first_listener_pid),"command":first_command,"listener_command":first_listener_command,"exit":int(first_exit)},"restart_spin":{"pid":int(restart_pid),"listener_pid":int(restart_listener_pid),"command":restart_command,"listener_command":restart_listener_command,"exit":int(restart_exit)}},"state_path":state_path,"secret_cases":{"missing":{"result":"startup-denied","error":"no provider resolved required variable"},"empty":{"result":"request-denied"},"whitespace":{"result":"request-denied"},"injected_by":"file-path"},"requests":{"case_table":cases,"sequential":2,"concurrent":20,"restart":"old-read-before-overwrite","server_generated_ids":True,"generated_ids":[generated_id,generated_id_2],"foreign_values":False},"stores":{"default":default_class,"ungranted":ungranted_class},"fixtures":{"config_before":cb,"config_after":ca,"expected_config": "3d2f8c447b8118a666b13aa213c7d4d4c929529535058d23972787f60491db5e","skill_before":sb,"skill_after":sa,"expected_skill":"9ba8c0cd3778f38a9a55616ca0b88770f34ba40d81135e4cc3ac8f13618c783","writes_denied":True,"named_repo_file_denied":"spin.toml","denied_paths":["/etc/hosts","/fixtures/../config.json","/fixtures/other.txt","/spin.toml"]},"mock":{"owned":True,"receipt_count":int(receipts),"receipt_ids":json.loads(receipt_ids),"capture":"mock-receipts.jsonl"},"final_kv_map":json.loads(final_map),"secret_scan_counts":json.loads(scans),"secret_scan_self_check":0,"provenance":{"evidence":"generated directly by this clean runtime run","old_secret_value_recorded":False}}
 with open(out,"w",encoding="utf-8") as f: json.dump(d,f,indent=2,sort_keys=True); f.write("\n")
 PY
 rg -a -F "$sentinel" "$out" >/dev/null 2>&1 && fail "secret leaked into final evidence"; cat "$out"
