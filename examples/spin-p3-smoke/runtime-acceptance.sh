@@ -66,7 +66,7 @@ request_file() {
   local id=$1 payload=$2 body=$3 status
   curl -sS -X POST "$base_url/probe" -H "X-Request-ID: $id" --data-binary "$payload" -o "$body" -w '%{http_code}' >"$body.status" || true
   status=$(<"$body.status"); [[ "$status" == 200 ]] || fail "request failed id=$id http=$status"
-  grep -Fq "request_id=$id" "$body" || fail "request id missing: $id"
+  [[ "$(awk -F= '$1=="request_id"{print $2}' "$body")" == "$id" ]] || fail "request id mismatch: $id"
   grep -Eq "^stored_value=server-[0-9a-f]{16}\\|$id\\|$payload$" "$body" || fail "stored value mismatch: $id"
 }
 umask 077; [[ -f "$root/spin.toml" ]] || fail "manifest missing"; assert_free "$port"; assert_free "$mock_port"
@@ -94,8 +94,31 @@ for class in denied_default_class denied_ungranted_class; do grep -Eq "$class=(a
 grep -Fq fixtures=read-only "$tmp/seq-1.body" || fail "fixture read evidence missing"; grep -Fq 'denied_paths=/etc/hosts,/fixtures/../config.json,/fixtures/other.txt,/spin.toml' "$tmp/seq-1.body" || fail "denied path evidence missing"; grep -Fq BROWSER_UAT_OK "$tmp/seq-1.body" || fail "mock response missing"
 request_pids=(); for n in $(seq 1 20); do id="runtime-concurrent-$n"; request_file "$id" "request_id=$id;value=payload-concurrent-$n" "$tmp/concurrent-$n.body" & request_pids+=("$!"); done
 for pid in "${request_pids[@]}"; do wait "$pid"; done
-for n in $(seq 1 20); do id="runtime-concurrent-$n"; grep -Fq "request_id=$id" "$tmp/concurrent-$n.body" || fail "concurrent id mismatch: $id"; grep -Fq "payload-concurrent-$n" "$tmp/concurrent-$n.body" || fail "concurrent value mismatch: $id"; done
-all_case_ids="$generated_id $generated_id_2 runtime-seq-1 runtime-seq-2 $(printf 'runtime-concurrent-%s ' $(seq 1 20))"; for body in "$tmp/generated.body" "$tmp/generated-2.body" "$tmp/seq-1.body" "$tmp/seq-2.body" "$tmp"/concurrent-*.body; do for other in $all_case_ids; do own=$(awk -F= '/^request_id=/{print $2}' "$body"); [[ "$other" == "$own" ]] && continue; grep -Fq "request_id=$other" "$body" && fail "foreign request ID in $body"; grep -Fq "|$other|" "$body" && fail "foreign stored value in $body"; done; done
+case_args=("$tmp/generated.body" "$generated_id" 'request_id=generated;value=payload-generated' "$tmp/generated-2.body" "$generated_id_2" 'request_id=generated-2;value=payload-generated-2' "$tmp/seq-1.body" runtime-seq-1 'request_id=runtime-seq-1;value=payload-seq-1' "$tmp/seq-2.body" runtime-seq-2 'request_id=runtime-seq-2;value=payload-seq-2')
+for n in $(seq 1 20); do case_args+=("$tmp/concurrent-$n.body" "runtime-concurrent-$n" "request_id=runtime-concurrent-$n;value=payload-concurrent-$n"); done
+python3 - "${case_args[@]}" <<'PY'
+import re,sys
+args=sys.argv[1:]
+if len(args)%3:
+    raise SystemExit("invalid case arguments")
+cases=[]
+for path,expected_id,expected_payload in zip(args[0::3],args[1::3],args[2::3]):
+    text=open(path,encoding="utf-8").read()
+    fields={line.split("=",1)[0]:line.split("=",1)[1] for line in text.splitlines() if "=" in line}
+    if fields.get("request_id") != expected_id:
+        raise SystemExit(f"request id mismatch: {path}")
+    stored=fields.get("stored_value","")
+    if not re.fullmatch(rf"server-[0-9a-f]{{16}}\\|{re.escape(expected_id)}\\|{re.escape(expected_payload)}",stored):
+        raise SystemExit(f"stored value mismatch: {path}")
+    cases.append((expected_id,stored))
+ids=[case[0] for case in cases]
+if len(ids) != len(set(ids)):
+    raise SystemExit("duplicate request IDs")
+for own,stored in cases:
+    for other in ids:
+        if own != other and f"|{other}|" in stored:
+            raise SystemExit(f"foreign stored value: {own} contains {other}")
+PY
 curl -sS "$base_url/snapshot" -o "$tmp/snapshot-before" || fail "snapshot before restart failed"; grep -Fq request/runtime-seq-1= "$tmp/snapshot-before" || fail "KV map missing sequential key"; grep -Fq request/runtime-concurrent-20= "$tmp/snapshot-before" || fail "KV map missing concurrent key"; stop_spin success
 check_snapshot() { local key=$1 body=$2 value; value=$(awk -F= '/^stored_value=/{print substr($0,index($0,"=")+1)}' "$body"); grep -Fq "$key=$value" "$tmp/snapshot-final" || fail "snapshot value mismatch: $key"; }
 start_spin restart "$tmp/secret"; restart_spin_pid=$spin_pid; request_file runtime-seq-1 'request_id=runtime-seq-1;value=payload-restart' "$tmp/restart.body"; grep -Fq preexisting=true "$tmp/restart.body" || fail "restart did not observe old value"; grep -Fq payload-seq-1 "$tmp/restart.body" || fail "old value was not read"; grep -Fq payload-restart "$tmp/restart.body" || fail "new value was not written"; curl -sS "$base_url/snapshot" -o "$tmp/snapshot-final" || fail "final KV map failed"; check_snapshot request/runtime-seq-1 "$tmp/restart.body"; check_snapshot request/runtime-seq-2 "$tmp/seq-2.body"; check_snapshot request/"$generated_id" "$tmp/generated.body"; check_snapshot request/"$generated_id_2" "$tmp/generated-2.body"; for n in $(seq 1 20); do check_snapshot request/runtime-concurrent-$n "$tmp/concurrent-$n.body"; done; stop_spin restart
