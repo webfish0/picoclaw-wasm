@@ -132,7 +132,7 @@ func init() {
 		w.Header().Set("Content-Type", "text/plain")
 		w.Header().Set("X-Request-ID", correlationID)
 		w.WriteHeader(http.StatusOK)
-		_, _ = fmt.Fprintf(w, "SPIN_P3_OK\nrequest_id=%s\nserver_id=%s\nstored_value=%s\npreexisting=%t\nprevious_value=%s\ndenied_default_class=%s\ndenied_ungranted_class=%s\nfixtures=read-only\ndenied_repo_file=spin.toml\n%s", correlationID, serverID, stored, preexisting, previousValue, deniedStoreClasses["default"], deniedStoreClasses["ungranted"], strings.TrimSpace(string(body)))
+		_, _ = fmt.Fprintf(w, "SPIN_P3_OK\nrequest_id=%s\nserver_id=%s\nstored_value=%s\npreexisting=%t\nprevious_value=%s\ndenied_default_class=%s\ndenied_ungranted_class=%s\nfixtures=read-only\ndenied_paths=/etc/hosts,/fixtures/../config.json,/fixtures/other.txt,/spin.toml\n%s", correlationID, serverID, stored, preexisting, previousValue, deniedStoreClasses["default"], deniedStoreClasses["ungranted"], strings.TrimSpace(string(body)))
 	})
 }
 

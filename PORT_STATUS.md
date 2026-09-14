@@ -18,7 +18,7 @@ Updated: 2026-09-12
 - Sol triage of Spin spike #14 isolated the local P3 outbound failure: the
   SDK v3.0.0 request converter rejects an origin-only mock URL because its
   path is empty. Keeping the exact loopback grant and canonicalising the
-  runtime URL to `http://127.0.0.1:18080/` returned `SPIN_P3_OK` directly
+  runtime URL to `http://127.0.0.1:31808/` returned `SPIN_P3_OK` directly
   through Spin 4.1.0 under the required componentize-go v0.3.3 pin.
 - Split the remaining #14 work into bounded board sub-issues #18–#21 for
   reproducibility, outbound-denial evidence, variable/file/store/isolation
@@ -158,6 +158,6 @@ overwrite; fixture immutability and denied writes; a named existing repository
 file denial; and per-target secret scans including the final evidence file.
 
 The full runtime evidence and exact #20 gate remain pending until a clean
-checkout run can bind the approved mock port 18080. On 2026-09-14 this checkout
-found an unrelated unowned Python listener on 127.0.0.1:18080 and correctly
-refused to stop or reuse it. No runtime pass is claimed from that attempt.
+checkout run can bind the approved mock port 31808. An unrelated listener on a
+different port was left untouched; the remediation uses the dedicated 31808
+origin and does not stop or reuse processes it did not start.

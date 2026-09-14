@@ -28,7 +28,7 @@ type receipt struct {
 func main() {
 	port := os.Getenv("SPIN_PROBE_MOCK_PORT")
 	if port == "" {
-		port = "18080"
+		port = "31808"
 	}
 	receiptsPath := os.Getenv("SPIN_MOCK_RECEIPTS")
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
