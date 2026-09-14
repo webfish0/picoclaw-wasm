@@ -36,11 +36,14 @@ func init() {
 			http.Error(w, "probe storage unavailable", http.StatusServiceUnavailable)
 			return
 		}
+		deniedStoreClass := ""
 		for _, deniedStore := range []string{"default", "ungranted"} {
 			if denied, openErr := kv.Open(deniedStore); openErr == nil {
 				_ = denied
 				http.Error(w, "probe store boundary violated", http.StatusInternalServerError)
 				return
+			} else if deniedStoreClass == "" {
+				deniedStoreClass = boundaryErrorClass(openErr)
 			}
 		}
 		key := "request/" + correlationID
@@ -109,8 +112,20 @@ func init() {
 		w.Header().Set("Content-Type", "text/plain")
 		w.Header().Set("X-Request-ID", correlationID)
 		w.WriteHeader(http.StatusOK)
-		_, _ = fmt.Fprintf(w, "SPIN_P3_OK\nrequest_id=%s\nstored_id=%s\npreexisting=%t\nprevious_id=%s\nfixtures=read-only\n%s", correlationID, stored, preexisting, previous, strings.TrimSpace(string(body)))
+		_, _ = fmt.Fprintf(w, "SPIN_P3_OK\nrequest_id=%s\nstored_id=%s\npreexisting=%t\nprevious_id=%s\ndenied_store_class=%s\nfixtures=read-only\n%s", correlationID, stored, preexisting, previous, deniedStoreClass, strings.TrimSpace(string(body)))
 	})
+}
+
+func boundaryErrorClass(err error) string {
+	message := strings.ToLower(err.Error())
+	switch {
+	case strings.Contains(message, "no such") || strings.Contains(message, "not found"):
+		return "no-such-store"
+	case strings.Contains(message, "access") || strings.Contains(message, "permission") || strings.Contains(message, "denied"):
+		return "access-denied"
+	default:
+		return "denied"
+	}
 }
 
 func main() {}
