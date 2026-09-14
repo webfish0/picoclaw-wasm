@@ -1,11 +1,14 @@
 package main
 
 import (
+	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
 	"io"
 	"log"
 	"net/http"
 	"os"
+	"sort"
 	"strings"
 
 	spinhttp "github.com/spinframework/spin-go-sdk/v3/http"
@@ -16,6 +19,10 @@ import (
 
 func init() {
 	spinhttp.Handle(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodGet && r.URL.Path == "/snapshot" {
+			writeSnapshot(w)
+			return
+		}
 		if r.Method != http.MethodPost || r.URL.Path != "/probe" {
 			http.Error(w, "not found", http.StatusNotFound)
 			return
@@ -26,7 +33,8 @@ func init() {
 			return
 		}
 		log.Printf("probe request id=%s", correlationID)
-		if _, err := variables.Get("secret"); err != nil {
+		secret, err := variables.Get("secret")
+		if err != nil || strings.TrimSpace(secret) == "" {
 			http.Error(w, "probe unavailable", http.StatusServiceUnavailable)
 			return
 		}
@@ -36,15 +44,19 @@ func init() {
 			http.Error(w, "probe storage unavailable", http.StatusServiceUnavailable)
 			return
 		}
-		deniedStoreClass := ""
+		deniedStoreClasses := make(map[string]string)
 		for _, deniedStore := range []string{"default", "ungranted"} {
 			if denied, openErr := kv.Open(deniedStore); openErr == nil {
 				_ = denied
 				http.Error(w, "probe store boundary violated", http.StatusInternalServerError)
 				return
-			} else if deniedStoreClass == "" {
-				deniedStoreClass = boundaryErrorClass(openErr)
+			} else {
+				deniedStoreClasses[deniedStore] = boundaryErrorClass(openErr)
 			}
+		}
+		if deniedStoreClasses["default"] == "" || deniedStoreClasses["ungranted"] == "" {
+			http.Error(w, "probe storage boundary is unclassified", http.StatusInternalServerError)
+			return
 		}
 		key := "request/" + correlationID
 		preexisting, err := store.Exists(key)
@@ -52,12 +64,29 @@ func init() {
 			http.Error(w, "probe storage unavailable", http.StatusServiceUnavailable)
 			return
 		}
-		if err := store.Set(key, []byte(correlationID)); err != nil {
+		requestBody, err := io.ReadAll(io.LimitReader(r.Body, 1024))
+		if err != nil {
+			http.Error(w, "invalid request body", http.StatusBadRequest)
+			return
+		}
+		digest := sha256.Sum256(append([]byte(correlationID+"|"), requestBody...))
+		serverID := "server-" + hex.EncodeToString(digest[:8])
+		value := fmt.Sprintf("%s|%s|%s", serverID, correlationID, strings.TrimSpace(string(requestBody)))
+		previousValue := ""
+		if preexisting {
+			previous, getErr := store.Get(key)
+			if getErr != nil {
+				http.Error(w, "probe storage unavailable", http.StatusServiceUnavailable)
+				return
+			}
+			previousValue = string(previous)
+		}
+		if err := store.Set(key, []byte(value)); err != nil {
 			http.Error(w, "probe storage unavailable", http.StatusServiceUnavailable)
 			return
 		}
 		stored, err := store.Get(key)
-		if err != nil || string(stored) != correlationID {
+		if err != nil || string(stored) != value {
 			http.Error(w, "probe storage unavailable", http.StatusServiceUnavailable)
 			return
 		}
@@ -73,13 +102,12 @@ func init() {
 				return
 			}
 		}
-		for _, denied := range []string{"/etc/hosts", "/fixtures/../config.json", "/fixtures/other.txt"} {
+		for _, denied := range []string{"/etc/hosts", "/fixtures/../config.json", "/fixtures/other.txt", "/spin.toml"} {
 			if _, err := os.ReadFile(denied); err == nil {
 				http.Error(w, "probe filesystem boundary violated", http.StatusInternalServerError)
 				return
 			}
 		}
-		previous := ""
 		mockURL := os.Getenv("SPIN_PROBE_MOCK_URL")
 		if mockURL == "" {
 			http.Error(w, "probe mock is not configured", http.StatusInternalServerError)
@@ -90,7 +118,7 @@ func init() {
 			http.Error(w, "invalid probe destination", http.StatusBadRequest)
 			return
 		}
-		resp, err := spinhttp.NewClient().Post(mockURL, "application/json", r.Body)
+		resp, err := spinhttp.NewClient().Post(mockURL, "application/json", strings.NewReader(string(requestBody)))
 		if err != nil {
 			http.Error(w, "outbound probe failed", http.StatusBadGateway)
 			return
@@ -104,8 +132,34 @@ func init() {
 		w.Header().Set("Content-Type", "text/plain")
 		w.Header().Set("X-Request-ID", correlationID)
 		w.WriteHeader(http.StatusOK)
-		_, _ = fmt.Fprintf(w, "SPIN_P3_OK\nrequest_id=%s\nstored_id=%s\npreexisting=%t\nprevious_id=%s\ndenied_store_class=%s\nfixtures=read-only\n%s", correlationID, stored, preexisting, previous, deniedStoreClass, strings.TrimSpace(string(body)))
+		_, _ = fmt.Fprintf(w, "SPIN_P3_OK\nrequest_id=%s\nserver_id=%s\nstored_value=%s\npreexisting=%t\nprevious_value=%s\ndenied_default_class=%s\ndenied_ungranted_class=%s\nfixtures=read-only\ndenied_repo_file=spin.toml\n%s", correlationID, serverID, stored, preexisting, previousValue, deniedStoreClasses["default"], deniedStoreClasses["ungranted"], strings.TrimSpace(string(body)))
 	})
+}
+
+func writeSnapshot(w http.ResponseWriter) {
+	store, err := kv.Open("workspace")
+	if err != nil {
+		http.Error(w, "probe storage unavailable", http.StatusServiceUnavailable)
+		return
+	}
+	keys := make([]string, 0)
+	for key, iterErr := range store.GetKeys() {
+		if iterErr != nil {
+			http.Error(w, "probe storage unavailable", http.StatusServiceUnavailable)
+			return
+		}
+		keys = append(keys, key)
+	}
+	sort.Strings(keys)
+	w.Header().Set("Content-Type", "text/plain")
+	for _, key := range keys {
+		value, getErr := store.Get(key)
+		if getErr != nil {
+			http.Error(w, "probe storage unavailable", http.StatusServiceUnavailable)
+			return
+		}
+		_, _ = fmt.Fprintf(w, "%s=%s\n", key, value)
+	}
 }
 
 func boundaryErrorClass(err error) string {

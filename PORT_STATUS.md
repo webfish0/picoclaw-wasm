@@ -144,3 +144,20 @@ resource harness for #20, then #21 with final Sol re-review. Formally complete
 #13 before #21. Continue to use the verified bridge path for the existing
 prototype until direct Spin launcher integration and #15 real-browser UAT pass;
 human approval remains required before merge.
+
+## Spin capability-closure remediation (PR #29)
+
+The scoped Spin harness now rebuilds and hashes the committed component before
+the run, records WIT/manifest/tool/host/process/port/state metadata, owns and
+verifies its deterministic mock and Spin listeners, injects the required secret
+only by a mode-0600 file path, and cleans up only processes whose command and
+listener ownership match. It exercises missing, empty and whitespace secret
+cases; separate default/ungranted store error classes; generated and explicit
+request IDs; sequential and 20-way concurrent KV ownership; restart read-before
+overwrite; fixture immutability and denied writes; a named existing repository
+file denial; and per-target secret scans including the final evidence file.
+
+The full runtime evidence and exact #20 gate remain pending until a clean
+checkout run can bind the approved mock port 18080. On 2026-09-14 this checkout
+found an unrelated unowned Python listener on 127.0.0.1:18080 and correctly
+refused to stop or reuse it. No runtime pass is claimed from that attempt.
