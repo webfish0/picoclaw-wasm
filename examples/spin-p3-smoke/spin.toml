@@ -21,4 +21,4 @@ files = [
 ]
 key_value_stores = ["workspace"]
 [component.probe.build]
-command = "go tool componentize-go build"
+command = "GOFLAGS='-trimpath -buildvcs=false' go tool componentize-go build && wasm-tools strip -d '^go:buildid$' main.wasm -o main.wasm"
