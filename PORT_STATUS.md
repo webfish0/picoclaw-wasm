@@ -18,7 +18,7 @@ Updated: 2026-09-12
 - Sol triage of Spin spike #14 isolated the local P3 outbound failure: the
   SDK v3.0.0 request converter rejects an origin-only mock URL because its
   path is empty. Keeping the exact loopback grant and canonicalising the
-  runtime URL to `http://127.0.0.1:18080/` returned `SPIN_P3_OK` directly
+  runtime URL to `http://127.0.0.1:31808/` returned `SPIN_P3_OK` directly
   through Spin 4.1.0 under the required componentize-go v0.3.3 pin.
 - Split the remaining #14 work into bounded board sub-issues #18–#21 for
   reproducibility, outbound-denial evidence, variable/file/store/isolation
@@ -144,3 +144,39 @@ resource harness for #20, then #21 with final Sol re-review. Formally complete
 #13 before #21. Continue to use the verified bridge path for the existing
 prototype until direct Spin launcher integration and #15 real-browser UAT pass;
 human approval remains required before merge.
+
+## Spin capability-closure remediation (PR #29)
+
+The scoped Spin harness now rebuilds and hashes the committed component before
+the run, records WIT/manifest/tool/host/process/port/state metadata, owns and
+verifies its deterministic mock and Spin listeners, injects the required secret
+only by a mode-0600 file path, and cleans up only processes whose command and
+listener ownership match. It exercises missing, empty and whitespace secret
+cases; separate default/ungranted store error classes; generated and explicit
+request IDs; sequential and 20-way concurrent KV ownership; restart read-before
+overwrite; fixture immutability and denied writes; a named existing repository
+file denial; and per-target secret scans including the final evidence file.
+
+The clean-checkout #20 gate passed on 2026-09-14 and published its direct
+transcript at `examples/spin-p3-smoke/runtime-acceptance-results.json`. The
+transcript's source commit is `bd9c496d84c7d195343bd1a48a4770604bf40f6a` and
+the transcript is committed separately as the publication record; it reports
+`clean_checkout_before: true`, the exact committed-and-run `main.wasm` hash
+`528ac70eaacfca3dd10a3078382c1c3606dc68aec3b9fbf4f74e5ccebe303880` (10,960,440
+bytes), 25 mock receipts, the full final KV map, owned launcher/listener PIDs,
+and zero matches for every scanned secret target. The public snapshot route is
+removed: empty and whitespace secret modes receive 404 for both `/snapshot`
+and `/probe`. After both Spin processes stop, the harness reads only its
+task-owned SQLite state and proves the exact 24-key map in
+`spin_key_value(store,key,value)` with no extras. It scans the two hidden
+`.spin/logs` component logs directly, scans launcher logs separately, and
+removes only the run-created `.spin` directory. It records the actual host
+kernel/hardware/process translation and `file` output for each tool binary.
+The scoped binary diff is bounded at 16,000,000 bytes and was 3,425,790 bytes
+from `origin/main` merge-base `0f97ca842ceb709dba412051d3db22530f7172e5`.
+The dedicated mock origin is 31808; an unrelated listener on a different port
+was left untouched.
+
+This evidence satisfies the implementation gate but does not self-approve the
+protected capability boundary. #20, #23, and #24 remain open pending the
+required independent named Sol review and human merge approval.

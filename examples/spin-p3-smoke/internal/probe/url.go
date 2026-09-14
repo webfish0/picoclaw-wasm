@@ -7,7 +7,7 @@ import (
 
 func NormalizeMockURL(raw string) (string, error) {
 	u, err := url.Parse(raw)
-	if err != nil || u.User != nil || u.Scheme != "http" || u.Hostname() != "127.0.0.1" || u.Port() != "18080" {
+	if err != nil || u.User != nil || u.Scheme != "http" || u.Hostname() != "127.0.0.1" || u.Port() != "31808" {
 		return "", fmt.Errorf("invalid probe destination")
 	}
 	if u.Path == "" {

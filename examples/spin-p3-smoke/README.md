@@ -17,7 +17,7 @@ spin build --from examples/spin-p3-smoke/spin.toml
 spin doctor --from examples/spin-p3-smoke/spin.toml
 ```
 
-The probe accepts only `http://127.0.0.1:18080`; an origin-only value is
+The probe accepts only `http://127.0.0.1:31808`; an origin-only value is
 canonicalized to `/`, while userinfo, other scheme/host/port values, queries,
 and fragments are rejected. The exact outbound grant remains in `spin.toml`.
 
@@ -33,9 +33,12 @@ SPIN_ACCEPTANCE_OUT=/tmp/spin-acceptance.json ./examples/spin-p3-smoke/acceptanc
 
 It rebuilds and diagnoses the component, runs policy tests, checks the WIT
 imports/exports, records one artifact hash, and performs a zero-match scan
-using a mode-0600 temporary secret file. Runtime restart/concurrency evidence
-must be added by the launcher UAT harness before this capability issue closes.
+using a mode-0600 temporary secret file. It also runs the black-box
+restart/concurrency matrix. The component intentionally exposes only POST
+`/probe`; no snapshot or other data-read route is available.
 
-The latest secret-free runtime transcript is committed at
-`evidence/runtime-39d6cae3.json`; it is tied to commit `39d6cae3` and records
-the exact artifact hash and result counts without recording the sentinel.
+The latest runtime transcript is generated directly by the clean acceptance
+run at the output path supplied by `SPIN_ACCEPTANCE_OUT`; it records the exact
+artifact hash, complete case table, final KV map verified from the stopped
+task-owned SQLite state, component/launcher log scans, and zero-match secret
+scans without recording the sentinel.
