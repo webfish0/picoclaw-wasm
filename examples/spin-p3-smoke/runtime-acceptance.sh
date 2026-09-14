@@ -5,11 +5,15 @@ cd "$root"
 out=${SPIN_ACCEPTANCE_OUT:-runtime-acceptance-results.json}
 port=${SPIN_ACCEPTANCE_PORT:-31080}
 mock_url=${SPIN_PROBE_MOCK_URL:-http://127.0.0.1:18080/}
-tmp=$(mktemp -d); spin_pid=0
-trap '[[ $spin_pid -eq 0 ]] || kill "$spin_pid" 2>/dev/null || true; rm -rf "$tmp"' EXIT
+tmp=$(mktemp -d); spin_pid=0; mock_pid=0
+trap '[[ $spin_pid -eq 0 ]] || kill "$spin_pid" 2>/dev/null || true; [[ $mock_pid -eq 0 ]] || kill "$mock_pid" 2>/dev/null || true; rm -rf "$tmp"' EXIT
 umask 077; secret="$tmp/secret"; printf 'runtime-undisclosed-%s\n' "$(date +%s%N)" >"$secret"
 runtime_cfg="$tmp/runtime-config.toml"
 printf '[key_value_store.workspace]\ntype = "spin"\npath = "%s"\n' "$tmp/workspace.db" >"$runtime_cfg"
+if [[ "$mock_url" == "http://127.0.0.1:18080/" ]]; then
+  go run ./mock >"$tmp/mock.stdout" 2>"$tmp/mock.stderr" & mock_pid=$!
+  for _ in {1..100}; do curl -sS "$mock_url" -o /dev/null >/dev/null 2>&1 && break; sleep 0.1; done
+fi
 PATH="${SPIN_GO_BIN:-/tmp/picoclaw-spin-native-arm64/go/bin}:$PATH" GOTOOLCHAIN=local spin build --from spin.toml >/dev/null
 if spin up --from spin.toml --listen "127.0.0.1:$port" --runtime-config-file "$runtime_cfg" >"$tmp/missing.stdout" 2>"$tmp/missing.stderr"; then
   echo '{"status":"fail","reason":"missing secret did not fail closed"}' >"$out"; exit 1
