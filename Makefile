@@ -1,4 +1,4 @@
-.PHONY: all build install uninstall clean help test integration-test build-all lint-docs
+.PHONY: all build install uninstall clean help test integration-test build-all lint-docs wasi wasi-test wasi-run wasi-bridge wasi-http
 
 # Build variables
 BINARY_NAME=picoclaw
@@ -513,3 +513,26 @@ help:
 	@echo "  Binary: $(BINARY_PATH)"
 	@echo "  Install Prefix: $(INSTALL_PREFIX)"
 	@echo "  Workspace: $(WORKSPACE_DIR)"
+
+## wasi: Build the minimal PicoClaw WASI module
+wasi:
+	mkdir -p $(BUILD_DIR)
+	GOOS=wasip1 GOARCH=wasm CGO_ENABLED=0 GOTOOLCHAIN=auto $(GO) build -o $(BUILD_DIR)/picoclaw-wasi.wasm ./cmd/picoclaw-wasi
+
+## wasi-test: Run native tests and compile the WASI test artifact
+wasi-test:
+	GOTOOLCHAIN=auto $(GO) test ./cmd/picoclaw-wasi
+	mkdir -p $(BUILD_DIR)
+	GOOS=wasip1 GOARCH=wasm CGO_ENABLED=0 GOTOOLCHAIN=auto $(GO) test -c -o $(BUILD_DIR)/picoclaw-wasi.test.wasm ./cmd/picoclaw-wasi
+
+## wasi-run: Run with explicit example preopens (provider networking is runtime-dependent)
+wasi-run: wasi
+	wasmtime run --dir examples/wasi::/config --dir examples/wasi/skills::/skills --dir /tmp/picoclaw-wasi-workspace::/workspace --env=OPENROUTER_API_KEY $(BUILD_DIR)/picoclaw-wasi.wasm
+
+## wasi-bridge: Run the WASI module with the restricted native HTTP bridge
+wasi-bridge: wasi
+	GOTOOLCHAIN=auto go run ./cmd/picoclaw-wasi-bridge --wasm $(BUILD_DIR)/picoclaw-wasi.wasm
+
+## wasi-http: Serve the WASI module through the localhost-only browser adapter
+wasi-http: wasi
+	GOTOOLCHAIN=auto go run ./cmd/picoclaw-wasi-http --wasm $(BUILD_DIR)/picoclaw-wasi.wasm

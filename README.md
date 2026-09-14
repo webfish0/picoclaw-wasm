@@ -22,6 +22,82 @@
 
 </div>
 
+## WASI prototype
+
+This fork includes a minimal `picoclaw-wasi` entry point. It is a separate,
+single-request WASI program and does not expose the full channel, subprocess,
+MCP, PTY or listener surface of the native CLI.
+
+Build and test it with:
+
+```sh
+make wasi
+make wasi-test
+```
+
+The prototype expects configuration, skills and workspace directories to be
+mounted explicitly by the runtime. The example is in `examples/wasi/`. With
+Wasmtime installed, use a launch equivalent to:
+
+```sh
+wasmtime run --dir examples/wasi::/config \
+  --dir examples/wasi/skills::/skills \
+  --dir /tmp/picoclaw-wasi-workspace::/workspace \
+  --env=OPENROUTER_API_KEY build/picoclaw-wasi.wasm
+```
+
+The API key is injected at runtime; never place it in the config or WASM file.
+The current Go `wasip1` module can load files and skills under Wasmtime, but
+does not yet reach DNS or localhost sockets; the provider runtime blocker is
+tracked on the project board. Do not enable unrestricted host networking as a
+workaround without updating the capability design and tests.
+
+For a working local end-to-end path, build the native bridge and point it at a
+local OpenAI-compatible mock or model server:
+
+```sh
+go build -o build/picoclaw-wasi-bridge ./cmd/picoclaw-wasi-bridge
+printf 'hello\n' | LOCAL_TEST_KEY=not-a-real-key \
+  ./build/picoclaw-wasi-bridge --wasm build/picoclaw-wasi.wasm \
+  --config examples/wasi/bridge-config --secret-env LOCAL_TEST_KEY
+```
+
+The bridge is a temporary deployment adapter; its allowlist is enforced in
+native code and it does not expose arbitrary fetch or host filesystem access to
+the module.
+
+For human-style local UAT, serve the page over HTTP. Opening it as `file://`
+causes browser security policies to report `TypeError: Failed to fetch` before
+the request reaches the adapter:
+
+```sh
+make wasi
+PICOCLAW_REPO_ROOT="$PWD" go run ./cmd/picoclaw-wasi-http \
+  --wasm build/picoclaw-wasi.wasm \
+  --config examples/wasi/ollama-config.json
+python3 -m http.server 18081 --directory examples/wasi
+```
+
+Open `http://127.0.0.1:18081/uat.html?endpoint=http%3A%2F%2F127.0.0.1%3A18082%2Fv1%2Fchat%2Fcompletions`.
+The button exercises browser → localhost adapter → Wasmtime → PicoClaw WASI
+→ SKILL.md/workspace → Ollama.
+
+The OpenRouter example uses model `nvidia/nemotron-3-ultra-550b-a55b:free` and
+the runtime secret variable `ORkey`. For a local Ollama-compatible server, use
+`examples/wasi/ollama-config.json`, which targets
+`1kb/huihui-qwen3.8-27b-mlx` at `127.0.0.1:11434`.
+
+Spin evaluation: Spin 4.1.0 is suitable for a future Component Model HTTP
+artifact, but `spin up -f build/picoclaw-wasi.wasm` rejects this Go Preview 1
+CLI module because it has no supported HTTP handler export. It is not a
+drop-in runner for the current artifact.
+
+Optional OCI distribution guidance is in `examples/oci/README.md`. OCI is not
+required for local execution and does not replace runtime capability policy.
+See `FEASIBILITY.md`, `ARCHITECTURE.md`, `WASI_PORT_PLAN.md` and
+`PORT_STATUS.md` for the compatibility assessment, capability model and current
+runtime blockers.
+
 ---
 
 > **PicoClaw** is an independent open-source project initiated by [Sipeed](https://sipeed.com), written entirely in **Go** from scratch — not a fork of OpenClaw, NanoBot, or any other project.

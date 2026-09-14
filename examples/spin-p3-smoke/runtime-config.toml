@@ -1,0 +1,3 @@
+[key_value_store.workspace]
+type = "spin"
+path = ".spin/workspace.db"
