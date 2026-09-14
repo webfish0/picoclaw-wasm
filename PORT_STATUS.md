@@ -159,16 +159,23 @@ file denial; and per-target secret scans including the final evidence file.
 
 The clean-checkout #20 gate passed on 2026-09-14 and published its direct
 transcript at `examples/spin-p3-smoke/runtime-acceptance-results.json`. The
-transcript's source commit is `df51640cf5e8c74d6818cdb4ec70a34e3412fe3a` and
+transcript's source commit is `bd9c496d84c7d195343bd1a48a4770604bf40f6a` and
 the transcript is committed separately as the publication record; it reports
 `clean_checkout_before: true`, the exact committed-and-run `main.wasm` hash
-`0b73953b5ed3b911afa844830d9fa6582ef8503e8f0006e13cc49149fb953c37` (11,011,331
+`528ac70eaacfca3dd10a3078382c1c3606dc68aec3b9fbf4f74e5ccebe303880` (10,960,440
 bytes), 25 mock receipts, the full final KV map, owned launcher/listener PIDs,
-and zero matches for every scanned secret target. It also scans a bounded
-9,057,295-byte binary diff of `origin/main` merge-base
-`0f97ca842ceb709dba412051d3db22530f7172e5` through the source commit. The
-dedicated mock origin is 31808; an unrelated listener on a different port was
-left untouched.
+and zero matches for every scanned secret target. The public snapshot route is
+removed: empty and whitespace secret modes receive 404 for both `/snapshot`
+and `/probe`. After both Spin processes stop, the harness reads only its
+task-owned SQLite state and proves the exact 24-key map in
+`spin_key_value(store,key,value)` with no extras. It scans the two hidden
+`.spin/logs` component logs directly, scans launcher logs separately, and
+removes only the run-created `.spin` directory. It records the actual host
+kernel/hardware/process translation and `file` output for each tool binary.
+The scoped binary diff is bounded at 16,000,000 bytes and was 3,425,790 bytes
+from `origin/main` merge-base `0f97ca842ceb709dba412051d3db22530f7172e5`.
+The dedicated mock origin is 31808; an unrelated listener on a different port
+was left untouched.
 
 This evidence satisfies the implementation gate but does not self-approve the
 protected capability boundary. #20, #23, and #24 remain open pending the

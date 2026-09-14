@@ -1,14 +1,21 @@
 {
   "artifact": {
-    "bytes": 11011331,
+    "bytes": 10960440,
     "path": "examples/spin-p3-smoke/main.wasm",
-    "sha256": "0b73953b5ed3b911afa844830d9fa6582ef8503e8f0006e13cc49149fb953c37"
+    "sha256": "528ac70eaacfca3dd10a3078382c1c3606dc68aec3b9fbf4f74e5ccebe303880"
   },
   "clean_checkout_before": true,
-  "commit": "df51640cf5e8c74d6818cdb4ec70a34e3412fe3a",
+  "commit": "bd9c496d84c7d195343bd1a48a4770604bf40f6a",
+  "component_logs": {
+    "cleanup": "removed-run-created",
+    "files": 2,
+    "path": "/private/tmp/picoclaw-spin-clean-final-kv/examples/spin-p3-smoke/.spin/logs",
+    "spin_dir_created": true,
+    "spin_dir_preexisting": false
+  },
   "final_kv_map": {
-    "request/probe-31d4f7c471de6e805fd736236eef3546": "server-e5bf338b52cb3451|probe-31d4f7c471de6e805fd736236eef3546|request_id=generated;value=payload-generated",
-    "request/probe-edeb27413a51ccdb307254a35c4883b4": "server-ccbfe6033bffdc5c|probe-edeb27413a51ccdb307254a35c4883b4|request_id=generated-2;value=payload-generated-2",
+    "request/probe-1055d6f2fda4a767699fc0c3d98562c0": "server-3e0289f7f9116932|probe-1055d6f2fda4a767699fc0c3d98562c0|request_id=generated-2;value=payload-generated-2",
+    "request/probe-9c66a44449c73c29e9e94991a9481cec": "server-366d35d789beea69|probe-9c66a44449c73c29e9e94991a9481cec|request_id=generated;value=payload-generated",
     "request/runtime-concurrent-1": "server-2200c3b275bdf29e|runtime-concurrent-1|request_id=runtime-concurrent-1;value=payload-concurrent-1",
     "request/runtime-concurrent-10": "server-5d94edd2d7d4b5b6|runtime-concurrent-10|request_id=runtime-concurrent-10;value=payload-concurrent-10",
     "request/runtime-concurrent-11": "server-296d8cfeb5248291|runtime-concurrent-11|request_id=runtime-concurrent-11;value=payload-concurrent-11",
@@ -49,9 +56,21 @@
     "writes_denied": true
   },
   "host": {
-    "architecture": "x86_64",
+    "hardware_machine": "arm64",
+    "kernel_machine": "arm64",
+    "kernel_release": "25.6.0",
     "os": "Darwin",
-    "release": "25.6.0"
+    "process_translation": "0"
+  },
+  "kv_db": {
+    "columns": [
+      "store",
+      "key",
+      "value"
+    ],
+    "key_count": 24,
+    "schema": "CREATE TABLE spin_key_value (\n                           store TEXT NOT NULL,\n                           key   TEXT NOT NULL,\n                           value BLOB NOT NULL,\n\n                           PRIMARY KEY (store, key)\n                        )",
+    "table": "spin_key_value"
   },
   "manifest": {
     "grants": {
@@ -109,23 +128,23 @@
   },
   "processes": {
     "first_spin": {
-      "command": "spin up --from spin.toml --listen 127.0.0.1:31080 --env SPIN_PROBE_MOCK_URL=http://127.0.0.1:31808/ --variable probe_secret=@/tmp/picoclaw-spin-acceptance.9GPZ1O/secret --runtime-config-file /tmp/picoclaw-spin-acceptance.9GPZ1O/runtime-config.toml",
+      "command": "spin up --from spin.toml --listen 127.0.0.1:31080 --env SPIN_PROBE_MOCK_URL=http://127.0.0.1:31808/ --variable probe_secret=@/tmp/picoclaw-spin-acceptance.5c4Rlj/secret --runtime-config-file /tmp/picoclaw-spin-acceptance.5c4Rlj/runtime-config.toml",
       "exit": 0,
-      "listener_command": "/opt/homebrew/bin/spin trigger http --listen 127.0.0.1:31080 --variable probe_secret=@/tmp/picoclaw-spin-acceptance.9GPZ1O/secret --runtime-config-file /tmp/picoclaw-spin-acceptance.9GPZ1O/runtime-config.toml",
-      "listener_pid": 95304,
-      "pid": 95296
+      "listener_command": "/opt/homebrew/bin/spin trigger http --listen 127.0.0.1:31080 --variable probe_secret=@/tmp/picoclaw-spin-acceptance.5c4Rlj/secret --runtime-config-file /tmp/picoclaw-spin-acceptance.5c4Rlj/runtime-config.toml",
+      "listener_pid": 14216,
+      "pid": 14208
     },
     "mock": {
-      "command": "/tmp/picoclaw-spin-acceptance.9GPZ1O/mock",
+      "command": "/tmp/picoclaw-spin-acceptance.5c4Rlj/mock",
       "exit": 143,
-      "pid": 95150
+      "pid": 14053
     },
     "restart_spin": {
-      "command": "spin up --from spin.toml --listen 127.0.0.1:31080 --env SPIN_PROBE_MOCK_URL=http://127.0.0.1:31808/ --variable probe_secret=@/tmp/picoclaw-spin-acceptance.9GPZ1O/secret --runtime-config-file /tmp/picoclaw-spin-acceptance.9GPZ1O/runtime-config.toml",
+      "command": "spin up --from spin.toml --listen 127.0.0.1:31080 --env SPIN_PROBE_MOCK_URL=http://127.0.0.1:31808/ --variable probe_secret=@/tmp/picoclaw-spin-acceptance.5c4Rlj/secret --runtime-config-file /tmp/picoclaw-spin-acceptance.5c4Rlj/runtime-config.toml",
       "exit": 0,
-      "listener_command": "/opt/homebrew/bin/spin trigger http --listen 127.0.0.1:31080 --variable probe_secret=@/tmp/picoclaw-spin-acceptance.9GPZ1O/secret --runtime-config-file /tmp/picoclaw-spin-acceptance.9GPZ1O/runtime-config.toml",
-      "listener_pid": 95470,
-      "pid": 95462
+      "listener_command": "/opt/homebrew/bin/spin trigger http --listen 127.0.0.1:31080 --variable probe_secret=@/tmp/picoclaw-spin-acceptance.5c4Rlj/secret --runtime-config-file /tmp/picoclaw-spin-acceptance.5c4Rlj/runtime-config.toml",
+      "listener_pid": 14382,
+      "pid": 14374
     }
   },
   "provenance": {
@@ -134,14 +153,14 @@
     "scoped_diff": {
       "base_commit": "0f97ca842ceb709dba412051d3db22530f7172e5",
       "base_ref": "origin/main",
-      "bytes": 9057295,
-      "head_commit": "df51640cf5e8c74d6818cdb4ec70a34e3412fe3a",
+      "bytes": 3425790,
+      "head_commit": "bd9c496d84c7d195343bd1a48a4770604bf40f6a",
       "max_bytes": 16000000,
       "paths": [
         "examples/spin-p3-smoke",
         "PORT_STATUS.md"
       ],
-      "sha256": "3634eae28c2592a1f44b1f38e05c7161d5b4d8fb97d15cef2f33a9f525d47d8e"
+      "sha256": "45dbd807b4bbcc273333ef5e242b88314e99f785c839fa0cab21473feafecb87"
     }
   },
   "requests": {
@@ -149,13 +168,13 @@
       {
         "foreign_value": false,
         "http": 200,
-        "id": "probe-31d4f7c471de6e805fd736236eef3546",
+        "id": "probe-9c66a44449c73c29e9e94991a9481cec",
         "kind": "generated"
       },
       {
         "foreign_value": false,
         "http": 200,
-        "id": "probe-edeb27413a51ccdb307254a35c4883b4",
+        "id": "probe-1055d6f2fda4a767699fc0c3d98562c0",
         "kind": "generated"
       },
       {
@@ -301,8 +320,8 @@
     "concurrent": 20,
     "foreign_values": false,
     "generated_ids": [
-      "probe-31d4f7c471de6e805fd736236eef3546",
-      "probe-edeb27413a51ccdb307254a35c4883b4"
+      "probe-9c66a44449c73c29e9e94991a9481cec",
+      "probe-1055d6f2fda4a767699fc0c3d98562c0"
     ],
     "restart": "old-read-before-overwrite",
     "sequential": 2,
@@ -310,6 +329,10 @@
   },
   "secret_cases": {
     "empty": {
+      "data_routes": {
+        "/probe": 404,
+        "/snapshot": 404
+      },
       "result": "request-denied"
     },
     "injected_by": "file-path",
@@ -318,11 +341,16 @@
       "result": "startup-denied"
     },
     "whitespace": {
+      "data_routes": {
+        "/probe": 404,
+        "/snapshot": 404
+      },
       "result": "request-denied"
     }
   },
   "secret_scan_counts": {
     "artifact": "0",
+    "component_logs": "0",
     "concurrent_bodies": "0",
     "config": "0",
     "diff": "0",
@@ -332,6 +360,7 @@
     "generated_body": "0",
     "generated_body_2": "0",
     "kv_db": "0",
+    "launcher_logs": "0",
     "manifest": "0",
     "missing_stderr": "0",
     "missing_stdout": "0",
@@ -342,38 +371,70 @@
     "seq2_body": "0",
     "skill": "0",
     "source": "0",
-    "spin_logs": "0",
     "whitespace_stderr": "0",
     "whitespace_stdout": "0"
   },
   "secret_scan_self_check": 0,
-  "started_utc": "2026-09-14T14:42:40Z",
-  "state_path": "/tmp/picoclaw-spin-acceptance.9GPZ1O/workspace.db",
+  "started_utc": "2026-09-14T15:08:11Z",
+  "state_path": "/tmp/picoclaw-spin-acceptance.5c4Rlj/workspace.db",
   "status": "pass",
   "stores": {
     "default": "access-denied",
     "ungranted": "access-denied"
   },
+  "tool_binary_architectures": {
+    "curl": {
+      "file": "Mach-O universal binary with 2 architectures: [x86_64:Mach-O 64-bit executable x86_64] [arm64e:Mach-O 64-bit executable arm64e]\n/usr/bin/curl (for architecture x86_64):\tMach-O 64-bit executable x86_64\n/usr/bin/curl (for architecture arm64e):\tMach-O 64-bit executable arm64e",
+      "path": "/usr/bin/curl",
+      "resolved_path": "/usr/bin/curl"
+    },
+    "go": {
+      "file": "Mach-O 64-bit executable x86_64",
+      "path": "/usr/local/bin/go",
+      "resolved_path": "/usr/local/Cellar/go/1.25.6/libexec/bin/go"
+    },
+    "jq": {
+      "file": "Mach-O universal binary with 2 architectures: [x86_64:Mach-O 64-bit executable x86_64] [arm64e:Mach-O 64-bit executable arm64e]\n/usr/bin/jq (for architecture x86_64):\tMach-O 64-bit executable x86_64\n/usr/bin/jq (for architecture arm64e):\tMach-O 64-bit executable arm64e",
+      "path": "/usr/bin/jq",
+      "resolved_path": "/usr/bin/jq"
+    },
+    "python3": {
+      "file": "Mach-O 64-bit executable x86_64",
+      "path": "/usr/local/bin/python3",
+      "resolved_path": "/usr/local/Cellar/python@3.14/3.14.3_1/Frameworks/Python.framework/Versions/3.14/bin/python3.14"
+    },
+    "rg": {
+      "file": "Mach-O 64-bit executable arm64",
+      "path": "/Applications/ChatGPT.app/Contents/Resources/rg",
+      "resolved_path": "/Applications/ChatGPT.app/Contents/Resources/rg"
+    },
+    "spin": {
+      "file": "Mach-O 64-bit executable arm64",
+      "path": "/opt/homebrew/bin/spin",
+      "resolved_path": "/opt/homebrew/Cellar/spin/4.1.0/bin/spin"
+    },
+    "wasm-tools": {
+      "file": "Mach-O 64-bit executable arm64",
+      "path": "/Users/davidkerr/.cargo/bin/wasm-tools",
+      "resolved_path": "/Users/davidkerr/.cargo/bin/wasm-tools"
+    }
+  },
   "tool_versions": {
     "curl": {
-      "architecture": "x86_64",
       "version": "curl 8.7.1 (x86_64-apple-darwin25.0) libcurl/8.7.1 (SecureTransport) LibreSSL/3.3.6 zlib/1.2.12 nghttp2/1.68.1"
     },
     "go": {
-      "architecture": "x86_64",
       "version": "go version go1.25.6 darwin/amd64"
     },
     "spin": {
-      "architecture": "x86_64",
       "version": "spin 4.1.0 (c0b3726 2026-08-25)"
     },
     "wasm_tools": {
-      "architecture": "x86_64",
       "version": "wasm-tools 1.259.0"
     }
   },
   "wit": {
-    "sha256": "938c992a133d3d9ff56da2c8e0dc44ff6b5630d2f3832f672307da213580e2ee",
+    "sha256": "a225cbb289eca3f25b4b82d2ea7a87353d5a215f31ac0cd91276fc31f0aa0d9d",
     "summary": "  import spin:key-value/key-value@3.0.0;;  import spin:variables/variables@3.0.0;;  export wasi:http/handler@0.3.0-rc-2026-03-15;;"
   }
 }
