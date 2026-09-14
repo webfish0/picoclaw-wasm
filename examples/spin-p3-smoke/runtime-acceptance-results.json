@@ -1,0 +1,367 @@
+{
+  "artifact": {
+    "bytes": 11011331,
+    "path": "examples/spin-p3-smoke/main.wasm",
+    "sha256": "0b73953b5ed3b911afa844830d9fa6582ef8503e8f0006e13cc49149fb953c37"
+  },
+  "clean_checkout_before": true,
+  "commit": "8b674137567e5d489afea091e9898190e29749f0",
+  "final_kv_map": {
+    "request/probe-a7d65cd22c4f528898fcc3c411a9a164": "server-73820b91224a3307|probe-a7d65cd22c4f528898fcc3c411a9a164|request_id=generated;value=payload-generated",
+    "request/probe-f215d03760b879f520459701b585aa47": "server-fa5ff1821f099740|probe-f215d03760b879f520459701b585aa47|request_id=generated-2;value=payload-generated-2",
+    "request/runtime-concurrent-1": "server-2200c3b275bdf29e|runtime-concurrent-1|request_id=runtime-concurrent-1;value=payload-concurrent-1",
+    "request/runtime-concurrent-10": "server-5d94edd2d7d4b5b6|runtime-concurrent-10|request_id=runtime-concurrent-10;value=payload-concurrent-10",
+    "request/runtime-concurrent-11": "server-296d8cfeb5248291|runtime-concurrent-11|request_id=runtime-concurrent-11;value=payload-concurrent-11",
+    "request/runtime-concurrent-12": "server-291f623ac7470cb3|runtime-concurrent-12|request_id=runtime-concurrent-12;value=payload-concurrent-12",
+    "request/runtime-concurrent-13": "server-1cf2b0685c63d122|runtime-concurrent-13|request_id=runtime-concurrent-13;value=payload-concurrent-13",
+    "request/runtime-concurrent-14": "server-54b8a755d0b39f29|runtime-concurrent-14|request_id=runtime-concurrent-14;value=payload-concurrent-14",
+    "request/runtime-concurrent-15": "server-516d88d7e5bcba72|runtime-concurrent-15|request_id=runtime-concurrent-15;value=payload-concurrent-15",
+    "request/runtime-concurrent-16": "server-0fa19c79e064c0de|runtime-concurrent-16|request_id=runtime-concurrent-16;value=payload-concurrent-16",
+    "request/runtime-concurrent-17": "server-b82c7a67da311870|runtime-concurrent-17|request_id=runtime-concurrent-17;value=payload-concurrent-17",
+    "request/runtime-concurrent-18": "server-e2f2e718f4d0afb9|runtime-concurrent-18|request_id=runtime-concurrent-18;value=payload-concurrent-18",
+    "request/runtime-concurrent-19": "server-6bd3bd4f97f0da3f|runtime-concurrent-19|request_id=runtime-concurrent-19;value=payload-concurrent-19",
+    "request/runtime-concurrent-2": "server-8b7ff0a20fda8a75|runtime-concurrent-2|request_id=runtime-concurrent-2;value=payload-concurrent-2",
+    "request/runtime-concurrent-20": "server-5c625ac6d6400e9b|runtime-concurrent-20|request_id=runtime-concurrent-20;value=payload-concurrent-20",
+    "request/runtime-concurrent-3": "server-1facddcbd0786a30|runtime-concurrent-3|request_id=runtime-concurrent-3;value=payload-concurrent-3",
+    "request/runtime-concurrent-4": "server-25b7471a71673541|runtime-concurrent-4|request_id=runtime-concurrent-4;value=payload-concurrent-4",
+    "request/runtime-concurrent-5": "server-54727a913678cfc1|runtime-concurrent-5|request_id=runtime-concurrent-5;value=payload-concurrent-5",
+    "request/runtime-concurrent-6": "server-dddcac44d6693e6e|runtime-concurrent-6|request_id=runtime-concurrent-6;value=payload-concurrent-6",
+    "request/runtime-concurrent-7": "server-158948e5bf413e31|runtime-concurrent-7|request_id=runtime-concurrent-7;value=payload-concurrent-7",
+    "request/runtime-concurrent-8": "server-02b92ca7cdc7a9a7|runtime-concurrent-8|request_id=runtime-concurrent-8;value=payload-concurrent-8",
+    "request/runtime-concurrent-9": "server-7390f704b9b61647|runtime-concurrent-9|request_id=runtime-concurrent-9;value=payload-concurrent-9",
+    "request/runtime-seq-1": "server-b865c33be7d7ef51|runtime-seq-1|request_id=runtime-seq-1;value=payload-restart",
+    "request/runtime-seq-2": "server-1f96ac64fdb87800|runtime-seq-2|request_id=runtime-seq-2;value=payload-seq-2"
+  },
+  "fixtures": {
+    "config_after": "3d2f8c447b8118a666b13aa213c7d4d4c929529535058d23972787f60491db5e",
+    "config_before": "3d2f8c447b8118a666b13aa213c7d4d4c929529535058d23972787f60491db5e",
+    "denied_paths": [
+      "/etc/hosts",
+      "/fixtures/../config.json",
+      "/fixtures/other.txt",
+      "/spin.toml"
+    ],
+    "expected_config": "3d2f8c447b8118a666b13aa213c7d4d4c929529535058d23972787f60491db5e",
+    "expected_skill": "9ba8c0cd3778f38a9a55616ca0b88770f34ba40d81135e4cc3ac8f13618c783",
+    "named_repo_file_denied": "spin.toml",
+    "skill_after": "9ba8c0cd3778f38a9a55616ca0b88770f34ba40d81135e4cc3ac8f13618c7833",
+    "skill_before": "9ba8c0cd3778f38a9a55616ca0b88770f34ba40d81135e4cc3ac8f13618c7833",
+    "writes_denied": true
+  },
+  "host": {
+    "architecture": "x86_64",
+    "os": "Darwin",
+    "release": "25.6.0"
+  },
+  "manifest": {
+    "grants": {
+      "files": [
+        "fixtures/config.json->/fixtures/config.json",
+        "fixtures/SKILL.md->/fixtures/SKILL.md"
+      ],
+      "key_value_stores": [
+        "workspace"
+      ],
+      "outbound_hosts": [
+        "http://127.0.0.1:31808"
+      ],
+      "variables": [
+        "probe_secret->secret"
+      ]
+    },
+    "sha256": "440293c40ed09f406445973b9930a9a0e079186a6ae8471d8cfdbd8223c66578"
+  },
+  "mock": {
+    "capture": "mock-receipts.jsonl",
+    "owned": true,
+    "receipt_count": 25,
+    "receipt_ids": [
+      "receipt-1",
+      "receipt-2",
+      "receipt-3",
+      "receipt-4",
+      "receipt-5",
+      "receipt-6",
+      "receipt-7",
+      "receipt-8",
+      "receipt-9",
+      "receipt-10",
+      "receipt-11",
+      "receipt-12",
+      "receipt-13",
+      "receipt-14",
+      "receipt-15",
+      "receipt-16",
+      "receipt-17",
+      "receipt-18",
+      "receipt-19",
+      "receipt-20",
+      "receipt-21",
+      "receipt-22",
+      "receipt-23",
+      "receipt-24",
+      "receipt-25"
+    ]
+  },
+  "ports": {
+    "mock_http": 31808,
+    "spin_http": 31080
+  },
+  "processes": {
+    "first_spin": {
+      "command": "spin up --from spin.toml --listen 127.0.0.1:31080 --env SPIN_PROBE_MOCK_URL=http://127.0.0.1:31808/ --variable probe_secret=@/tmp/picoclaw-spin-acceptance.NrVtLk/secret --runtime-config-file /tmp/picoclaw-spin-acceptance.NrVtLk/runtime-config.toml",
+      "exit": 0,
+      "listener_command": "/opt/homebrew/bin/spin trigger http --listen 127.0.0.1:31080 --variable probe_secret=@/tmp/picoclaw-spin-acceptance.NrVtLk/secret --runtime-config-file /tmp/picoclaw-spin-acceptance.NrVtLk/runtime-config.toml",
+      "listener_pid": 88511,
+      "pid": 88503
+    },
+    "mock": {
+      "command": "/tmp/picoclaw-spin-acceptance.NrVtLk/mock",
+      "exit": 143,
+      "pid": 88342
+    },
+    "restart_spin": {
+      "command": "spin up --from spin.toml --listen 127.0.0.1:31080 --env SPIN_PROBE_MOCK_URL=http://127.0.0.1:31808/ --variable probe_secret=@/tmp/picoclaw-spin-acceptance.NrVtLk/secret --runtime-config-file /tmp/picoclaw-spin-acceptance.NrVtLk/runtime-config.toml",
+      "exit": 0,
+      "listener_command": "/opt/homebrew/bin/spin trigger http --listen 127.0.0.1:31080 --variable probe_secret=@/tmp/picoclaw-spin-acceptance.NrVtLk/secret --runtime-config-file /tmp/picoclaw-spin-acceptance.NrVtLk/runtime-config.toml",
+      "listener_pid": 88676,
+      "pid": 88668
+    }
+  },
+  "provenance": {
+    "evidence": "generated directly by this clean runtime run",
+    "old_secret_value_recorded": false
+  },
+  "requests": {
+    "case_table": [
+      {
+        "foreign_value": false,
+        "http": 200,
+        "id": "probe-a7d65cd22c4f528898fcc3c411a9a164",
+        "kind": "generated"
+      },
+      {
+        "foreign_value": false,
+        "http": 200,
+        "id": "probe-f215d03760b879f520459701b585aa47",
+        "kind": "generated"
+      },
+      {
+        "foreign_value": false,
+        "http": 200,
+        "id": "runtime-seq-1",
+        "kind": "sequential"
+      },
+      {
+        "foreign_value": false,
+        "http": 200,
+        "id": "runtime-seq-2",
+        "kind": "sequential"
+      },
+      {
+        "foreign_value": false,
+        "http": 200,
+        "id": "runtime-concurrent-1",
+        "kind": "concurrent"
+      },
+      {
+        "foreign_value": false,
+        "http": 200,
+        "id": "runtime-concurrent-2",
+        "kind": "concurrent"
+      },
+      {
+        "foreign_value": false,
+        "http": 200,
+        "id": "runtime-concurrent-3",
+        "kind": "concurrent"
+      },
+      {
+        "foreign_value": false,
+        "http": 200,
+        "id": "runtime-concurrent-4",
+        "kind": "concurrent"
+      },
+      {
+        "foreign_value": false,
+        "http": 200,
+        "id": "runtime-concurrent-5",
+        "kind": "concurrent"
+      },
+      {
+        "foreign_value": false,
+        "http": 200,
+        "id": "runtime-concurrent-6",
+        "kind": "concurrent"
+      },
+      {
+        "foreign_value": false,
+        "http": 200,
+        "id": "runtime-concurrent-7",
+        "kind": "concurrent"
+      },
+      {
+        "foreign_value": false,
+        "http": 200,
+        "id": "runtime-concurrent-8",
+        "kind": "concurrent"
+      },
+      {
+        "foreign_value": false,
+        "http": 200,
+        "id": "runtime-concurrent-9",
+        "kind": "concurrent"
+      },
+      {
+        "foreign_value": false,
+        "http": 200,
+        "id": "runtime-concurrent-10",
+        "kind": "concurrent"
+      },
+      {
+        "foreign_value": false,
+        "http": 200,
+        "id": "runtime-concurrent-11",
+        "kind": "concurrent"
+      },
+      {
+        "foreign_value": false,
+        "http": 200,
+        "id": "runtime-concurrent-12",
+        "kind": "concurrent"
+      },
+      {
+        "foreign_value": false,
+        "http": 200,
+        "id": "runtime-concurrent-13",
+        "kind": "concurrent"
+      },
+      {
+        "foreign_value": false,
+        "http": 200,
+        "id": "runtime-concurrent-14",
+        "kind": "concurrent"
+      },
+      {
+        "foreign_value": false,
+        "http": 200,
+        "id": "runtime-concurrent-15",
+        "kind": "concurrent"
+      },
+      {
+        "foreign_value": false,
+        "http": 200,
+        "id": "runtime-concurrent-16",
+        "kind": "concurrent"
+      },
+      {
+        "foreign_value": false,
+        "http": 200,
+        "id": "runtime-concurrent-17",
+        "kind": "concurrent"
+      },
+      {
+        "foreign_value": false,
+        "http": 200,
+        "id": "runtime-concurrent-18",
+        "kind": "concurrent"
+      },
+      {
+        "foreign_value": false,
+        "http": 200,
+        "id": "runtime-concurrent-19",
+        "kind": "concurrent"
+      },
+      {
+        "foreign_value": false,
+        "http": 200,
+        "id": "runtime-concurrent-20",
+        "kind": "concurrent"
+      },
+      {
+        "foreign_value": false,
+        "http": 200,
+        "id": "runtime-seq-1",
+        "kind": "restart",
+        "old_read": true
+      }
+    ],
+    "concurrent": 20,
+    "foreign_values": false,
+    "generated_ids": [
+      "probe-a7d65cd22c4f528898fcc3c411a9a164",
+      "probe-f215d03760b879f520459701b585aa47"
+    ],
+    "restart": "old-read-before-overwrite",
+    "sequential": 2,
+    "server_generated_ids": true
+  },
+  "secret_cases": {
+    "empty": {
+      "result": "request-denied"
+    },
+    "injected_by": "file-path",
+    "missing": {
+      "error": "no provider resolved required variable",
+      "result": "startup-denied"
+    },
+    "whitespace": {
+      "result": "request-denied"
+    }
+  },
+  "secret_scan_counts": {
+    "artifact": "0",
+    "concurrent_bodies": "0",
+    "config": "0",
+    "diff": "0",
+    "empty_stderr": "0",
+    "empty_stdout": "0",
+    "evidence": "0",
+    "generated_body": "0",
+    "generated_body_2": "0",
+    "kv_db": "0",
+    "manifest": "0",
+    "missing_stderr": "0",
+    "missing_stdout": "0",
+    "mock_capture": "0",
+    "restart_body": "0",
+    "runtime_config": "0",
+    "seq1_body": "0",
+    "seq2_body": "0",
+    "skill": "0",
+    "source": "0",
+    "spin_logs": "0",
+    "whitespace_stderr": "0",
+    "whitespace_stdout": "0"
+  },
+  "secret_scan_self_check": 0,
+  "started_utc": "2026-09-14T14:34:56Z",
+  "state_path": "/tmp/picoclaw-spin-acceptance.NrVtLk/workspace.db",
+  "status": "pass",
+  "stores": {
+    "default": "access-denied",
+    "ungranted": "access-denied"
+  },
+  "tool_versions": {
+    "curl": {
+      "architecture": "x86_64",
+      "version": "curl 8.7.1 (x86_64-apple-darwin25.0) libcurl/8.7.1 (SecureTransport) LibreSSL/3.3.6 zlib/1.2.12 nghttp2/1.68.1"
+    },
+    "go": {
+      "architecture": "x86_64",
+      "version": "go version go1.25.6 darwin/amd64"
+    },
+    "spin": {
+      "architecture": "x86_64",
+      "version": "spin 4.1.0 (c0b3726 2026-08-25)"
+    },
+    "wasm_tools": {
+      "architecture": "x86_64",
+      "version": "wasm-tools 1.259.0"
+    }
+  },
+  "wit": {
+    "sha256": "938c992a133d3d9ff56da2c8e0dc44ff6b5630d2f3832f672307da213580e2ee",
+    "summary": "  import spin:key-value/key-value@3.0.0;;  import spin:variables/variables@3.0.0;;  export wasi:http/handler@0.3.0-rc-2026-03-15;;"
+  }
+}

@@ -157,7 +157,16 @@ request IDs; sequential and 20-way concurrent KV ownership; restart read-before
 overwrite; fixture immutability and denied writes; a named existing repository
 file denial; and per-target secret scans including the final evidence file.
 
-The full runtime evidence and exact #20 gate remain pending until a clean
-checkout run can bind the approved mock port 31808. An unrelated listener on a
-different port was left untouched; the remediation uses the dedicated 31808
-origin and does not stop or reuse processes it did not start.
+The clean-checkout #20 gate passed on 2026-09-14 and published its direct
+transcript at `examples/spin-p3-smoke/runtime-acceptance-results.json`. The
+transcript's source commit is `8b674137567e5d489afea091e9898190e29749f0` and
+the transcript is committed separately as the publication record; it reports
+`clean_checkout_before: true`, the exact committed-and-run `main.wasm` hash
+`0b73953b5ed3b911afa844830d9fa6582ef8503e8f0006e13cc49149fb953c37` (11,011,331
+bytes), 25 mock receipts, the full final KV map, owned launcher/listener PIDs,
+and zero matches for every scanned secret target. The dedicated mock origin is
+31808; an unrelated listener on a different port was left untouched.
+
+This evidence satisfies the implementation gate but does not self-approve the
+protected capability boundary. #20, #23, and #24 remain open pending the
+required independent named Sol review and human merge approval.
