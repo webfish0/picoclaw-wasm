@@ -108,7 +108,7 @@ for path,expected_id,expected_payload in zip(args[0::3],args[1::3],args[2::3]):
     if fields.get("request_id") != expected_id:
         raise SystemExit(f"request id mismatch: {path}")
     stored=fields.get("stored_value","")
-    if not re.fullmatch(rf"server-[0-9a-f]{{16}}\\|{re.escape(expected_id)}\\|{re.escape(expected_payload)}",stored):
+    if not re.fullmatch(rf"server-[0-9a-f]{{16}}\|{re.escape(expected_id)}\|{re.escape(expected_payload)}",stored):
         raise SystemExit(f"stored value mismatch: {path}")
     cases.append((expected_id,stored))
 ids=[case[0] for case in cases]
