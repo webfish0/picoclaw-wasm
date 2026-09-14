@@ -26,7 +26,7 @@ fail() { local reason=$1; mkdir -p "$(dirname "$out")"; jq -n --arg reason "$rea
 for tool in spin wasm-tools go curl jq rg lsof ps shasum xxd python3; do command -v "$tool" >/dev/null 2>&1 || fail "missing tool: $tool"; done
 assert_free() { if lsof -nP -iTCP:"$1" -sTCP:LISTEN >/dev/null 2>&1; then fail "port already owned: $1"; fi; }
 owned() { local pid=$1 pattern=$2 command; kill -0 "$pid" 2>/dev/null || fail "owned process exited: $pid"; command=$(ps -p "$pid" -o command= 2>/dev/null || true); [[ "$command" == *"$pattern"* ]] || fail "ownership mismatch pid=$pid command=$command"; }
-wait_http() { local url=$1 body=$2 code=000; for _ in $(seq 1 120); do code=$(curl -sS -o "$body" -w '%{http_code}' "$url" 2>/dev/null || printf 000); [[ "$code" != 000 ]] && { printf '%s' "$code"; return; }; sleep 0.1; done; printf '%s' "$code"; return 1; }
+wait_http() { local url=$1 body=$2 code=000; for _ in $(seq 1 120); do if code=$(curl -sS -o "$body" -w '%{http_code}' "$url" 2>/dev/null); then :; else code=000; fi; [[ "$code" != 000 ]] && { printf '%s' "$code"; return; }; sleep 0.1; done; printf '%s' "$code"; return 1; }
 start_spin() {
   local label=$1 secret_file=${2:-}; assert_free "$port"
   if [[ -n "$secret_file" ]]; then
