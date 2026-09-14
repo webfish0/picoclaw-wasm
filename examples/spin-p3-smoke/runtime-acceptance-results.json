@@ -5,10 +5,10 @@
     "sha256": "0b73953b5ed3b911afa844830d9fa6582ef8503e8f0006e13cc49149fb953c37"
   },
   "clean_checkout_before": true,
-  "commit": "8b674137567e5d489afea091e9898190e29749f0",
+  "commit": "df51640cf5e8c74d6818cdb4ec70a34e3412fe3a",
   "final_kv_map": {
-    "request/probe-a7d65cd22c4f528898fcc3c411a9a164": "server-73820b91224a3307|probe-a7d65cd22c4f528898fcc3c411a9a164|request_id=generated;value=payload-generated",
-    "request/probe-f215d03760b879f520459701b585aa47": "server-fa5ff1821f099740|probe-f215d03760b879f520459701b585aa47|request_id=generated-2;value=payload-generated-2",
+    "request/probe-31d4f7c471de6e805fd736236eef3546": "server-e5bf338b52cb3451|probe-31d4f7c471de6e805fd736236eef3546|request_id=generated;value=payload-generated",
+    "request/probe-edeb27413a51ccdb307254a35c4883b4": "server-ccbfe6033bffdc5c|probe-edeb27413a51ccdb307254a35c4883b4|request_id=generated-2;value=payload-generated-2",
     "request/runtime-concurrent-1": "server-2200c3b275bdf29e|runtime-concurrent-1|request_id=runtime-concurrent-1;value=payload-concurrent-1",
     "request/runtime-concurrent-10": "server-5d94edd2d7d4b5b6|runtime-concurrent-10|request_id=runtime-concurrent-10;value=payload-concurrent-10",
     "request/runtime-concurrent-11": "server-296d8cfeb5248291|runtime-concurrent-11|request_id=runtime-concurrent-11;value=payload-concurrent-11",
@@ -42,7 +42,7 @@
       "/spin.toml"
     ],
     "expected_config": "3d2f8c447b8118a666b13aa213c7d4d4c929529535058d23972787f60491db5e",
-    "expected_skill": "9ba8c0cd3778f38a9a55616ca0b88770f34ba40d81135e4cc3ac8f13618c783",
+    "expected_skill": "9ba8c0cd3778f38a9a55616ca0b88770f34ba40d81135e4cc3ac8f13618c7833",
     "named_repo_file_denied": "spin.toml",
     "skill_after": "9ba8c0cd3778f38a9a55616ca0b88770f34ba40d81135e4cc3ac8f13618c7833",
     "skill_before": "9ba8c0cd3778f38a9a55616ca0b88770f34ba40d81135e4cc3ac8f13618c7833",
@@ -109,41 +109,53 @@
   },
   "processes": {
     "first_spin": {
-      "command": "spin up --from spin.toml --listen 127.0.0.1:31080 --env SPIN_PROBE_MOCK_URL=http://127.0.0.1:31808/ --variable probe_secret=@/tmp/picoclaw-spin-acceptance.NrVtLk/secret --runtime-config-file /tmp/picoclaw-spin-acceptance.NrVtLk/runtime-config.toml",
+      "command": "spin up --from spin.toml --listen 127.0.0.1:31080 --env SPIN_PROBE_MOCK_URL=http://127.0.0.1:31808/ --variable probe_secret=@/tmp/picoclaw-spin-acceptance.9GPZ1O/secret --runtime-config-file /tmp/picoclaw-spin-acceptance.9GPZ1O/runtime-config.toml",
       "exit": 0,
-      "listener_command": "/opt/homebrew/bin/spin trigger http --listen 127.0.0.1:31080 --variable probe_secret=@/tmp/picoclaw-spin-acceptance.NrVtLk/secret --runtime-config-file /tmp/picoclaw-spin-acceptance.NrVtLk/runtime-config.toml",
-      "listener_pid": 88511,
-      "pid": 88503
+      "listener_command": "/opt/homebrew/bin/spin trigger http --listen 127.0.0.1:31080 --variable probe_secret=@/tmp/picoclaw-spin-acceptance.9GPZ1O/secret --runtime-config-file /tmp/picoclaw-spin-acceptance.9GPZ1O/runtime-config.toml",
+      "listener_pid": 95304,
+      "pid": 95296
     },
     "mock": {
-      "command": "/tmp/picoclaw-spin-acceptance.NrVtLk/mock",
+      "command": "/tmp/picoclaw-spin-acceptance.9GPZ1O/mock",
       "exit": 143,
-      "pid": 88342
+      "pid": 95150
     },
     "restart_spin": {
-      "command": "spin up --from spin.toml --listen 127.0.0.1:31080 --env SPIN_PROBE_MOCK_URL=http://127.0.0.1:31808/ --variable probe_secret=@/tmp/picoclaw-spin-acceptance.NrVtLk/secret --runtime-config-file /tmp/picoclaw-spin-acceptance.NrVtLk/runtime-config.toml",
+      "command": "spin up --from spin.toml --listen 127.0.0.1:31080 --env SPIN_PROBE_MOCK_URL=http://127.0.0.1:31808/ --variable probe_secret=@/tmp/picoclaw-spin-acceptance.9GPZ1O/secret --runtime-config-file /tmp/picoclaw-spin-acceptance.9GPZ1O/runtime-config.toml",
       "exit": 0,
-      "listener_command": "/opt/homebrew/bin/spin trigger http --listen 127.0.0.1:31080 --variable probe_secret=@/tmp/picoclaw-spin-acceptance.NrVtLk/secret --runtime-config-file /tmp/picoclaw-spin-acceptance.NrVtLk/runtime-config.toml",
-      "listener_pid": 88676,
-      "pid": 88668
+      "listener_command": "/opt/homebrew/bin/spin trigger http --listen 127.0.0.1:31080 --variable probe_secret=@/tmp/picoclaw-spin-acceptance.9GPZ1O/secret --runtime-config-file /tmp/picoclaw-spin-acceptance.9GPZ1O/runtime-config.toml",
+      "listener_pid": 95470,
+      "pid": 95462
     }
   },
   "provenance": {
     "evidence": "generated directly by this clean runtime run",
-    "old_secret_value_recorded": false
+    "old_secret_value_recorded": false,
+    "scoped_diff": {
+      "base_commit": "0f97ca842ceb709dba412051d3db22530f7172e5",
+      "base_ref": "origin/main",
+      "bytes": 9057295,
+      "head_commit": "df51640cf5e8c74d6818cdb4ec70a34e3412fe3a",
+      "max_bytes": 16000000,
+      "paths": [
+        "examples/spin-p3-smoke",
+        "PORT_STATUS.md"
+      ],
+      "sha256": "3634eae28c2592a1f44b1f38e05c7161d5b4d8fb97d15cef2f33a9f525d47d8e"
+    }
   },
   "requests": {
     "case_table": [
       {
         "foreign_value": false,
         "http": 200,
-        "id": "probe-a7d65cd22c4f528898fcc3c411a9a164",
+        "id": "probe-31d4f7c471de6e805fd736236eef3546",
         "kind": "generated"
       },
       {
         "foreign_value": false,
         "http": 200,
-        "id": "probe-f215d03760b879f520459701b585aa47",
+        "id": "probe-edeb27413a51ccdb307254a35c4883b4",
         "kind": "generated"
       },
       {
@@ -289,8 +301,8 @@
     "concurrent": 20,
     "foreign_values": false,
     "generated_ids": [
-      "probe-a7d65cd22c4f528898fcc3c411a9a164",
-      "probe-f215d03760b879f520459701b585aa47"
+      "probe-31d4f7c471de6e805fd736236eef3546",
+      "probe-edeb27413a51ccdb307254a35c4883b4"
     ],
     "restart": "old-read-before-overwrite",
     "sequential": 2,
@@ -335,8 +347,8 @@
     "whitespace_stdout": "0"
   },
   "secret_scan_self_check": 0,
-  "started_utc": "2026-09-14T14:34:56Z",
-  "state_path": "/tmp/picoclaw-spin-acceptance.NrVtLk/workspace.db",
+  "started_utc": "2026-09-14T14:42:40Z",
+  "state_path": "/tmp/picoclaw-spin-acceptance.9GPZ1O/workspace.db",
   "status": "pass",
   "stores": {
     "default": "access-denied",

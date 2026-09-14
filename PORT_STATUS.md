@@ -159,13 +159,16 @@ file denial; and per-target secret scans including the final evidence file.
 
 The clean-checkout #20 gate passed on 2026-09-14 and published its direct
 transcript at `examples/spin-p3-smoke/runtime-acceptance-results.json`. The
-transcript's source commit is `8b674137567e5d489afea091e9898190e29749f0` and
+transcript's source commit is `df51640cf5e8c74d6818cdb4ec70a34e3412fe3a` and
 the transcript is committed separately as the publication record; it reports
 `clean_checkout_before: true`, the exact committed-and-run `main.wasm` hash
 `0b73953b5ed3b911afa844830d9fa6582ef8503e8f0006e13cc49149fb953c37` (11,011,331
 bytes), 25 mock receipts, the full final KV map, owned launcher/listener PIDs,
-and zero matches for every scanned secret target. The dedicated mock origin is
-31808; an unrelated listener on a different port was left untouched.
+and zero matches for every scanned secret target. It also scans a bounded
+9,057,295-byte binary diff of `origin/main` merge-base
+`0f97ca842ceb709dba412051d3db22530f7172e5` through the source commit. The
+dedicated mock origin is 31808; an unrelated listener on a different port was
+left untouched.
 
 This evidence satisfies the implementation gate but does not self-approve the
 protected capability boundary. #20, #23, and #24 remain open pending the
