@@ -153,13 +153,15 @@ try:
 except sqlite3.Error as error:
     raise SystemExit(f"KV schema inspection failed: {error}")
 candidates=[]
+inspected=[]
 for name, sql in tables:
     quoted='"'+name.replace('"','""')+'"'
     columns=[row[1] for row in db.execute(f"PRAGMA table_info({quoted})")]
+    inspected.append((name, columns))
     if columns == ["key", "value"]:
         candidates.append((name, sql, columns))
 if len(candidates) != 1:
-    raise SystemExit(f"KV schema mismatch: expected one key/value table, found {[(name, columns) for name,_,columns in candidates]}")
+    raise SystemExit(f"KV schema mismatch: expected one key/value table, candidates={[(name, columns) for name,_,columns in candidates]} inspected={inspected}")
 name,sql,columns=candidates[0]
 quoted='"'+name.replace('"','""')+'"'
 try:
