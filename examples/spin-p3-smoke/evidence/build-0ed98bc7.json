@@ -1,0 +1,7 @@
+{
+  "status": "pass",
+  "artifact_commit": "0ed98bc7",
+  "artifact_sha256": "e596b520f5ebc7cf5f41d445fc826127352afa3928dadc93f2722ccee30dac7d",
+  "clean_build_1_sha256": "e596b520f5ebc7cf5f41d445fc826127352afa3928dadc93f2722ccee30dac7d",
+  "clean_build_2_sha256": "e596b520f5ebc7cf5f41d445fc826127352afa3928dadc93f2722ccee30dac7d"
+}
