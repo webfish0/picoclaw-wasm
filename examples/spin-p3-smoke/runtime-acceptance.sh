@@ -36,6 +36,7 @@ request() { curl -fsS -X POST "http://127.0.0.1:$port/probe" -H "X-Request-ID: $
 first=$(request runtime-seq-1); second=$(request runtime-seq-2)
 grep -q 'request_id=runtime-seq-1' <<<"$first"; grep -q 'request_id=runtime-seq-2' <<<"$second"
 grep -q 'stored_id=runtime-seq-1' <<<"$first"; grep -q 'stored_id=runtime-seq-2' <<<"$second"
+grep -Eq 'denied_store_class=(access-denied|no-such-store|denied)' <<<"$first"
 grep -q 'fixtures=read-only' <<<"$first"; grep -q 'BROWSER_UAT_OK' <<<"$first"
 request_pids=()
 for n in $(seq 1 20); do request "runtime-concurrent-$n" >"$tmp/response-$n" & request_pids+=("$!"); done
