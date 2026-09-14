@@ -27,6 +27,7 @@ cleanup() {
 trap cleanup EXIT
 fail() { local reason=$1; mkdir -p "$(dirname "$out")"; jq -n --arg reason "$reason" --arg commit "$commit" --arg started "$run_started" '{status:"fail",reason:$reason,commit:$commit,started_utc:$started}' >"$out"; exit 1; }
 for tool in spin wasm-tools go curl jq rg lsof ps shasum xxd python3; do command -v "$tool" >/dev/null 2>&1 || fail "missing tool: $tool"; done
+[[ -z "$status_before" ]] || fail "checkout is not clean before runtime gate"
 assert_free() { if lsof -nP -iTCP:"$1" -sTCP:LISTEN >/dev/null 2>&1; then fail "port already owned: $1"; fi; }
 owned() { local pid=$1 pattern=$2 command; kill -0 "$pid" 2>/dev/null || fail "owned process exited: $pid"; command=$(ps -p "$pid" -o command= 2>/dev/null || true); [[ "$command" == *"$pattern"* ]] || fail "ownership mismatch pid=$pid command=$command"; }
 wait_http() { local url=$1 body=$2 code=000; for _ in $(seq 1 120); do if code=$(curl -sS -o "$body" -w '%{http_code}' "$url" 2>/dev/null); then :; else code=000; fi; [[ "$code" != 000 ]] && { printf '%s' "$code"; return; }; sleep 0.1; done; printf '%s' "$code"; return 1; }
@@ -141,7 +142,7 @@ PY
 mock_pid_record=$mock_pid; mock_command=$(ps -p "$mock_pid" -o command= 2>/dev/null || true); [[ "$mock_command" == *"$tmp/mock"* ]] || fail "mock ownership lost"; kill "$mock_pid" 2>/dev/null || true; set +e; wait "$mock_pid"; mock_exit=$?; set -e; mock_pid=0
 scan_json=$(printf '%s\n' "${scan_counts[@]}" | python3 -c 'import json,sys; print(json.dumps(dict(x.rstrip("\n").split("=",1) for x in sys.stdin), sort_keys=True, separators=(",",":")))')
 spin_version=$(spin --version | head -1); go_version=$(go version); wasm_tools_version=$(wasm-tools --version | head -1); curl_version=$(curl --version | head -1)
-status_clean=$([[ -z "$status_before" ]] && printf true || printf false); mkdir -p "$(dirname "$out")"
+status_clean=true; mkdir -p "$(dirname "$out")"
 wit_summary=$(rg 'export wasi:http/handler|import spin:variables/variables@3.0.0|import spin:key-value/key-value@3.0.0' "$tmp/wit.txt" | tr '\n' ';')
 receipt_ids=$(jq -sc '[.[].receipt_id]' "$mock_receipts")
 python3 - "$out" "$commit" "$run_started" "$artifact_run_hash" "$artifact_run_bytes" "$manifest_hash" "$wit_hash" "$wit_summary" "$port" "$mock_port" "$mock_pid_record" "$mock_exit" "$mock_command" "$first_spin_pid" "$first_spin_listener_pid" "$first_spin_command" "$first_spin_listener_command" "$first_spin_exit" "$restart_spin_pid" "$restart_spin_listener_pid" "$restart_spin_command" "$restart_spin_listener_command" "$restart_spin_exit" "$state_path" "$config_before" "$config_after" "$config_expected" "$skill_before" "$skill_after" "$skill_expected" "$receipt_count" "$receipt_ids" "$generated_id" "$generated_id_2" "$default_store_class" "$ungranted_store_class" "$final_map" "$scan_json" "$status_clean" "$spin_version" "$go_version" "$wasm_tools_version" "$curl_version" "$diff_base" "$source_diff_hash" "$source_diff_bytes" "$source_diff_limit" <<'PY'
