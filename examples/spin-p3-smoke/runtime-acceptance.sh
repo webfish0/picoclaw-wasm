@@ -10,11 +10,22 @@ trap '[[ $spin_pid -eq 0 ]] || kill "$spin_pid" 2>/dev/null || true; [[ $mock_pi
 umask 077; secret="$tmp/secret"; printf 'runtime-undisclosed-%s\n' "$(date +%s%N)" >"$secret"
 runtime_cfg="$tmp/runtime-config.toml"
 printf '[key_value_store.workspace]\ntype = "spin"\npath = "%s"\n' "$tmp/workspace.db" >"$runtime_cfg"
+artifact_backup="$tmp/main.wasm.backup"
+cp main.wasm "$artifact_backup"
 if [[ "$mock_url" == "http://127.0.0.1:18080/" ]]; then
   go run ./mock >"$tmp/mock.stdout" 2>"$tmp/mock.stderr" & mock_pid=$!
   for _ in {1..100}; do curl -sS "$mock_url" -o /dev/null >/dev/null 2>&1 && break; sleep 0.1; done
 fi
-PATH="${SPIN_GO_BIN:-/tmp/picoclaw-spin-native-arm64/go/bin}:$PATH" GOTOOLCHAIN=local spin build --from spin.toml >/dev/null
+if ! PATH="${SPIN_GO_BIN:-/tmp/picoclaw-spin-native-arm64/go/bin}:$PATH" GOTOOLCHAIN=local spin build --from spin.toml >/dev/null; then
+  cp "$artifact_backup" main.wasm
+  echo '{"status":"fail","reason":"spin build failed; prior artifact restored"}' >"$out"
+  exit 1
+fi
+if [[ "$(xxd -p -l 4 main.wasm)" != "0061736d" ]]; then
+  cp "$artifact_backup" main.wasm
+  echo '{"status":"fail","reason":"spin build produced invalid wasm; prior artifact restored"}' >"$out"
+  exit 1
+fi
 if spin up --from spin.toml --listen "127.0.0.1:$port" --runtime-config-file "$runtime_cfg" >"$tmp/missing.stdout" 2>"$tmp/missing.stderr"; then
   echo '{"status":"fail","reason":"missing secret did not fail closed"}' >"$out"; exit 1
 fi
