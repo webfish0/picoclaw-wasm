@@ -57,9 +57,17 @@ grep -q 'previous_id=runtime-seq-1' <<<"$restart"
 sentinel=$(<"$secret")
 scan_targets=("$tmp/spin.stdout" "$tmp/spin.stderr" "$tmp/restart.stdout" "$tmp/restart.stderr" "$tmp/mock.stdout" "$tmp/mock.stderr" "$tmp"/response-* "$tmp/workspace.db" main.wasm)
 if rg -a -n -F "$sentinel" "${scan_targets[@]}" >/dev/null 2>&1; then echo '{"status":"fail","reason":"sentinel leaked"}' >"$out"; exit 1; fi
+scan_counts=""
+for target in "${scan_targets[@]}"; do
+  matches=$(rg -a -F -o "$sentinel" "$target" 2>/dev/null || true)
+  if [[ -n "$matches" ]]; then matches=$(printf '%s\n' "$matches" | wc -l | tr -d ' '); else matches=0; fi
+  scan_counts="${scan_counts}${target##*/}=${matches};"
+done
 hash=$(shasum -a 256 main.wasm | awk '{print $1}')
 config_hash=$(shasum -a 256 fixtures/config.json | awk '{print $1}')
 skill_hash=$(shasum -a 256 fixtures/SKILL.md | awk '{print $1}')
+manifest_hash=$(shasum -a 256 spin.toml | awk '{print $1}')
+wit_hash=$(wasm-tools component wit main.wasm | shasum -a 256 | awk '{print $1}')
 spin_version=$(spin --version | head -1)
 go_version=$(go version)
-printf '{"status":"pass","artifact_sha256":"%s","missing_secret":"fail-closed-exact-variable-error","sequential":2,"concurrent":20,"restart":"pass","mock_pid":%s,"spin_pid":%s,"kv_state":"%s/workspace.db","fixture_sha256":{"config":"%s","skill":"%s"},"tool_versions":{"spin":"%s","go":"%s"},"sentinel_matches":0}\n' "$hash" "$mock_pid" "$spin_pid" "$tmp" "$config_hash" "$skill_hash" "$spin_version" "$go_version" >"$out"; cat "$out"
+printf '{"status":"pass","artifact_sha256":"%s","missing_secret":"fail-closed-exact-variable-error","sequential":2,"concurrent":20,"restart":"pass","mock_pid":%s,"spin_pid":%s,"kv_state":"%s/workspace.db","fixture_sha256":{"config":"%s","skill":"%s"},"manifest_sha256":"%s","wit_sha256":"%s","tool_versions":{"spin":"%s","go":"%s"},"scan_counts":"%s","sentinel_matches":0}\n' "$hash" "$mock_pid" "$spin_pid" "$tmp" "$config_hash" "$skill_hash" "$manifest_hash" "$wit_hash" "$spin_version" "$go_version" "$scan_counts" >"$out"; cat "$out"
