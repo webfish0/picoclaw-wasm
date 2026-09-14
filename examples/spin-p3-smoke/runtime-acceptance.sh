@@ -9,6 +9,15 @@ spin_pid=0; spin_listener_pid=0; mock_pid=0; missing_pid=0; spin_exit="not-stopp
 run_started=$(date -u '+%Y-%m-%dT%H:%M:%SZ'); commit=$(git rev-parse HEAD 2>/dev/null || printf unknown)
 status_before=$(git status --porcelain 2>/dev/null || true)
 state_path="$tmp/workspace.db"; runtime_cfg="$tmp/runtime-config.toml"; mock_receipts="$tmp/mock-receipts.jsonl"
+spin_dir="$root/.spin"; component_logs_path="$spin_dir/logs"; spin_dir_preexisting=false; spin_dir_created=false; spin_dir_cleanup="not-needed"
+[[ -e "$spin_dir" ]] && spin_dir_preexisting=true
+clean_run_spin_dir() {
+  if [[ "$spin_dir_preexisting" == false ]] && [[ -e "$spin_dir" ]]; then
+    rm -rf "$spin_dir"; [[ ! -e "$spin_dir" ]] || fail "failed to remove run-created Spin directory"; spin_dir_cleanup="removed-run-created"
+  elif [[ "$spin_dir_preexisting" == true ]]; then
+    spin_dir_cleanup="preserved-preexisting"
+  fi
+}
 cleanup() {
   if [[ "$spin_pid" != 0 ]] && kill -0 "$spin_pid" 2>/dev/null; then
     command=$(ps -p "$spin_pid" -o command= 2>/dev/null || true); [[ "$command" == *"spin up"* ]] && kill "$spin_pid" 2>/dev/null || true
@@ -22,11 +31,12 @@ cleanup() {
   if [[ "$missing_pid" != 0 ]] && kill -0 "$missing_pid" 2>/dev/null; then
     command=$(ps -p "$missing_pid" -o command= 2>/dev/null || true); [[ "$command" == *"spin up"* ]] && kill "$missing_pid" 2>/dev/null || true
   fi
+  clean_run_spin_dir
   rm -rf "$tmp"
 }
 trap cleanup EXIT
 fail() { local reason=$1; mkdir -p "$(dirname "$out")"; jq -n --arg reason "$reason" --arg commit "$commit" --arg started "$run_started" '{status:"fail",reason:$reason,commit:$commit,started_utc:$started}' >"$out"; exit 1; }
-for tool in spin wasm-tools go curl jq rg lsof ps shasum xxd python3; do command -v "$tool" >/dev/null 2>&1 || fail "missing tool: $tool"; done
+for tool in spin wasm-tools go curl jq rg lsof ps shasum xxd python3 file uname sysctl find; do command -v "$tool" >/dev/null 2>&1 || fail "missing tool: $tool"; done
 [[ -z "$status_before" ]] || fail "checkout is not clean before runtime gate"
 assert_free() { if lsof -nP -iTCP:"$1" -sTCP:LISTEN >/dev/null 2>&1; then fail "port already owned: $1"; fi; }
 owned() { local pid=$1 pattern=$2 command; kill -0 "$pid" 2>/dev/null || fail "owned process exited: $pid"; command=$(ps -p "$pid" -o command= 2>/dev/null || true); [[ "$command" == *"$pattern"* ]] || fail "ownership mismatch pid=$pid command=$command"; }
@@ -88,7 +98,8 @@ for _ in $(seq 1 50); do kill -0 "$missing_pid" 2>/dev/null || break; sleep 0.1;
 if kill -0 "$missing_pid" 2>/dev/null; then command=$(ps -p "$missing_pid" -o command= 2>/dev/null || true); [[ "$command" == *"spin up"* ]] || fail "missing-secret process ownership mismatch"; kill "$missing_pid" 2>/dev/null || true; fail "missing secret startup did not terminate within bound"; fi
 set +e; wait "$missing_pid"; missing_exit=$?; set -e; missing_pid=0; [[ "$missing_exit" != 0 ]] || fail "missing secret did not fail closed"
 grep -Fq 'no provider resolved required variable' "$tmp/missing.stderr" || fail "missing secret error was not exact"
-run_rejected() { local label=$1 file=$2 code body; if start_spin "$label" "$file"; then body="$tmp/$label.response"; code=$(curl -sS -X POST "$base_url/probe" -H 'X-Request-ID: rejected-secret' --data-binary 'request_id=rejected-secret;value=none' -o "$body" -w '%{http_code}' || true); [[ "$code" != 200 ]] || fail "$label secret was accepted"; grep -Fq 'probe unavailable' "$body" || fail "$label denial was not explicit"; stop_spin "$label"; else [[ -s "$tmp/$label.stderr" ]] || fail "$label failure had no diagnostic"; fi; }
+assert_no_data_routes() { local label=$1 path code body; for path in /snapshot /probe; do body="$tmp/$label${path//\//-}.body"; code=$(curl -sS -o "$body" -w '%{http_code}' "$base_url$path" || true); [[ "$code" == 404 ]] || fail "$label exposed data route $path http=$code"; done; }
+run_rejected() { local label=$1 file=$2 code body; if start_spin "$label" "$file"; then assert_no_data_routes "$label"; body="$tmp/$label.response"; code=$(curl -sS -X POST "$base_url/probe" -H 'X-Request-ID: rejected-secret' --data-binary 'request_id=rejected-secret;value=none' -o "$body" -w '%{http_code}' || true); [[ "$code" != 200 ]] || fail "$label secret was accepted"; grep -Fq 'probe unavailable' "$body" || fail "$label denial was not explicit"; stop_spin "$label"; else [[ -s "$tmp/$label.stderr" ]] || fail "$label failure had no diagnostic"; fi; }
 run_rejected empty "$tmp/empty-secret"; run_rejected whitespace "$tmp/whitespace-secret"
 start_spin success "$tmp/secret"; first_spin_pid=$spin_pid; curl -sS -X POST "$base_url/probe" --data-binary 'request_id=generated;value=payload-generated' -o "$tmp/generated.body" -w '%{http_code}' >"$tmp/generated.body.status" || true; [[ "$(<"$tmp/generated.body.status")" == 200 ]] || fail "server-generated request failed"; generated_id=$(awk -F= '/^request_id=/{print $2}' "$tmp/generated.body"); [[ "$generated_id" == probe-* ]] || fail "server-generated request ID missing"; curl -sS -X POST "$base_url/probe" --data-binary 'request_id=generated-2;value=payload-generated-2' -o "$tmp/generated-2.body" -w '%{http_code}' >"$tmp/generated-2.body.status" || true; [[ "$(<"$tmp/generated-2.body.status")" == 200 ]] || fail "second server-generated request failed"; generated_id_2=$(awk -F= '/^request_id=/{print $2}' "$tmp/generated-2.body"); [[ "$generated_id_2" == probe-* && "$generated_id_2" != "$generated_id" ]] || fail "server-generated request IDs are not distinct"; grep -Fq server_id= "$tmp/generated.body" || fail "server-generated value missing"; grep -Fq server_id= "$tmp/generated-2.body" || fail "second server-generated value missing"; request_file runtime-seq-1 'request_id=runtime-seq-1;value=payload-seq-1' "$tmp/seq-1.body"; request_file runtime-seq-2 'request_id=runtime-seq-2;value=payload-seq-2' "$tmp/seq-2.body"
 grep -Fq preexisting=false "$tmp/seq-1.body" || fail "first sequential request preexisting"; grep -Fq preexisting=false "$tmp/seq-2.body" || fail "second sequential request preexisting"
@@ -121,35 +132,97 @@ for own,stored in cases:
         if own != other and f"|{other}|" in stored:
             raise SystemExit(f"foreign stored value: {own} contains {other}")
 PY
-curl -sS "$base_url/snapshot" -o "$tmp/snapshot-before" || fail "snapshot before restart failed"; grep -Fq request/runtime-seq-1= "$tmp/snapshot-before" || fail "KV map missing sequential key"; grep -Fq request/runtime-concurrent-20= "$tmp/snapshot-before" || fail "KV map missing concurrent key"; stop_spin success
-check_snapshot() { local key=$1 body=$2 value; value=$(awk -F= '/^stored_value=/{print substr($0,index($0,"=")+1)}' "$body"); grep -Fq "$key=$value" "$tmp/snapshot-final" || fail "snapshot value mismatch: $key"; }
-start_spin restart "$tmp/secret"; restart_spin_pid=$spin_pid; request_file runtime-seq-1 'request_id=runtime-seq-1;value=payload-restart' "$tmp/restart.body"; grep -Fq preexisting=true "$tmp/restart.body" || fail "restart did not observe old value"; grep -Fq payload-seq-1 "$tmp/restart.body" || fail "old value was not read"; grep -Fq payload-restart "$tmp/restart.body" || fail "new value was not written"; curl -sS "$base_url/snapshot" -o "$tmp/snapshot-final" || fail "final KV map failed"; check_snapshot request/runtime-seq-1 "$tmp/restart.body"; check_snapshot request/runtime-seq-2 "$tmp/seq-2.body"; check_snapshot request/"$generated_id" "$tmp/generated.body"; check_snapshot request/"$generated_id_2" "$tmp/generated-2.body"; for n in $(seq 1 20); do check_snapshot request/runtime-concurrent-$n "$tmp/concurrent-$n.body"; done; stop_spin restart
+assert_no_data_routes success; stop_spin success
+start_spin restart "$tmp/secret"; restart_spin_pid=$spin_pid; assert_no_data_routes restart; request_file runtime-seq-1 'request_id=runtime-seq-1;value=payload-restart' "$tmp/restart.body"; grep -Fq preexisting=true "$tmp/restart.body" || fail "restart did not observe old value"; grep -Fq 'previous_value=.*payload-seq-1' "$tmp/restart.body" || fail "old value was not read"; grep -Fq payload-restart "$tmp/restart.body" || fail "new value was not written"; stop_spin restart
 config_after=$(shasum -a 256 fixtures/config.json | awk '{print $1}'); skill_after=$(shasum -a 256 fixtures/SKILL.md | awk '{print $1}'); [[ "$config_before" == "$config_after" ]] || fail "config fixture changed"; [[ "$skill_before" == "$skill_after" ]] || fail "skill fixture changed"; [[ -s "$mock_receipts" ]] || fail "mock captured no requests"; receipt_count=$(wc -l <"$mock_receipts" | tr -d ' '); [[ "$receipt_count" == 25 ]] || fail "mock receipt count mismatch: $receipt_count"; jq -s -e 'length == 25 and ([.[].receipt_id] | unique | length == 25)' "$mock_receipts" >/dev/null || fail "mock receipt IDs are not unique"; for expected in generated generated-2 runtime-seq-1 runtime-seq-2; do grep -Fq "request_id=$expected" "$mock_receipts" || fail "mock receipt missing: $expected"; done; for n in $(seq 1 20); do grep -Fq "runtime-concurrent-$n" "$mock_receipts" || fail "mock receipt missing concurrent-$n"; done; grep -Fq 'payload-restart' "$mock_receipts" || fail "mock receipt missing restart"
 default_store_class=$(awk -F= '/^denied_default_class=/{print $2}' "$tmp/seq-1.body"); ungranted_store_class=$(awk -F= '/^denied_ungranted_class=/{print $2}' "$tmp/seq-1.body"); [[ "$default_store_class" =~ ^(access-denied|no-such-store)$ ]] || fail "default store class invalid"; [[ "$ungranted_store_class" =~ ^(access-denied|no-such-store)$ ]] || fail "ungranted store class invalid"
-sentinel=$(<"$tmp/secret"); repo_root=$(git rev-parse --show-toplevel 2>/dev/null) || fail "cannot resolve repository root"; diff_base=$(git -C "$repo_root" merge-base origin/main HEAD 2>/dev/null) || fail "cannot resolve merge-base for origin/main and HEAD"; [[ -n "$diff_base" ]] || fail "empty merge-base for origin/main and HEAD"; source_diff_limit=16000000; git -C "$repo_root" diff --binary "$diff_base" HEAD -- examples/spin-p3-smoke PORT_STATUS.md >"$tmp/source-diff" || fail "cannot generate scoped source diff"; source_diff_hash=$(shasum -a 256 "$tmp/source-diff" | awk '{print $1}'); source_diff_bytes=$(wc -c <"$tmp/source-diff" | tr -d ' '); [[ "$source_diff_bytes" -gt 0 ]] || fail "scoped source diff was empty"; [[ "$source_diff_bytes" -le "$source_diff_limit" ]] || fail "scoped source diff exceeded ${source_diff_limit} bytes"
-cat "$tmp"/concurrent-*.body >"$tmp/concurrent-bodies.scan"; cat "$tmp"/*.stdout "$tmp"/*.stderr >"$tmp/spin-logs.scan"; cat "$tmp/generated.body" "$tmp/generated-2.body" "$tmp/seq-1.body" "$tmp/seq-2.body" "$tmp"/concurrent-*.body "$tmp/restart.body" >"$tmp/http-bodies.scan"
-scan_labels=(source diff manifest config skill runtime_config artifact missing_stdout missing_stderr empty_stdout empty_stderr whitespace_stdout whitespace_stderr generated_body generated_body_2 seq1_body seq2_body concurrent_bodies restart_body mock_capture spin_logs kv_db evidence); scan_paths=("$root" "$tmp/source-diff" "$root/spin.toml" "$root/fixtures/config.json" "$root/fixtures/SKILL.md" "$runtime_cfg" "$root/main.wasm" "$tmp/missing.stdout" "$tmp/missing.stderr" "$tmp/empty.stdout" "$tmp/empty.stderr" "$tmp/whitespace.stdout" "$tmp/whitespace.stderr" "$tmp/generated.body" "$tmp/generated-2.body" "$tmp/seq-1.body" "$tmp/seq-2.body" "$tmp/concurrent-bodies.scan" "$tmp/restart.body" "$mock_receipts" "$tmp/spin-logs.scan" "$state_path" "$out"); scan_counts=()
-for i in "${!scan_labels[@]}"; do count=$(rg -a -F -o "$sentinel" "${scan_paths[$i]}" 2>/dev/null | wc -l | tr -d ' ' || true); scan_counts+=("${scan_labels[$i]}=$count"); [[ "$count" == 0 ]] || fail "secret leaked into ${scan_labels[$i]}"; done
-final_map=$(python3 - "$tmp/snapshot-final" <<'PY'
-import json,sys
-r={}
-for line in open(sys.argv[1],encoding="utf-8"):
- line=line.rstrip("\n")
- if "=" in line: k,v=line.split("=",1); r[k]=v
-print(json.dumps(r,sort_keys=True,separators=(",",":")))
+stored_value() { awk -F= '/^stored_value=/{print substr($0,index($0,"=")+1)}' "$1"; }
+kv_args=("request/$generated_id" "$(stored_value "$tmp/generated.body")" "request/$generated_id_2" "$(stored_value "$tmp/generated-2.body")" "request/runtime-seq-1" "$(stored_value "$tmp/restart.body")" "request/runtime-seq-2" "$(stored_value "$tmp/seq-2.body")")
+for n in $(seq 1 20); do kv_args+=("request/runtime-concurrent-$n" "$(stored_value "$tmp/concurrent-$n.body")"); done
+kv_result=$(python3 - "$state_path" "${kv_args[@]}" <<'PY'
+import json,sqlite3,sys
+state,*args=sys.argv[1:]
+if len(args) % 2:
+    raise SystemExit("invalid expected KV argument count")
+expected=dict(zip(args[0::2],args[1::2]))
+if len(expected) != 24:
+    raise SystemExit(f"expected 24 KV keys, got {len(expected)}")
+try:
+    db=sqlite3.connect(f"file:{state}?mode=ro", uri=True)
+    tables=db.execute("SELECT name, sql FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' ORDER BY name").fetchall()
+except sqlite3.Error as error:
+    raise SystemExit(f"KV schema inspection failed: {error}")
+candidates=[]
+for name, sql in tables:
+    quoted='"'+name.replace('"','""')+'"'
+    columns=[row[1] for row in db.execute(f"PRAGMA table_info({quoted})")]
+    if columns == ["key", "value"]:
+        candidates.append((name, sql, columns))
+if len(candidates) != 1:
+    raise SystemExit(f"KV schema mismatch: expected one key/value table, found {[(name, columns) for name,_,columns in candidates]}")
+name,sql,columns=candidates[0]
+quoted='"'+name.replace('"','""')+'"'
+try:
+    rows=db.execute(f"SELECT key, value FROM {quoted} ORDER BY key").fetchall()
+except sqlite3.Error as error:
+    raise SystemExit(f"KV query mismatch: {error}")
+actual={}
+for key,value in rows:
+    if not isinstance(key,str) or not isinstance(value,(bytes,bytearray)):
+        raise SystemExit("KV query returned unexpected key/value types")
+    try:
+        actual[key]=bytes(value).decode("utf-8")
+    except UnicodeDecodeError as error:
+        raise SystemExit(f"KV value was not UTF-8: {error}")
+if len(rows) != len(actual) or len(actual) != 24:
+    raise SystemExit(f"KV key count mismatch: rows={len(rows)} keys={len(actual)}")
+if actual != expected:
+    missing=sorted(set(expected)-set(actual)); extra=sorted(set(actual)-set(expected)); changed=sorted(k for k in set(actual)&set(expected) if actual[k]!=expected[k])
+    raise SystemExit(f"KV map mismatch: missing={missing} extra={extra} changed={changed}")
+print(json.dumps({"map":actual,"table":name,"columns":columns,"schema":sql,"key_count":len(actual)},sort_keys=True,separators=(",",":")))
 PY
-)
+) || fail "final stopped-state KV verification failed"
+final_map=$(printf '%s' "$kv_result" | jq -ce '.map') || fail "final KV map encoding failed"; kv_db_schema=$(printf '%s' "$kv_result" | jq -ce 'del(.map)') || fail "final KV schema encoding failed"
+sentinel=$(<"$tmp/secret"); repo_root=$(git rev-parse --show-toplevel 2>/dev/null) || fail "cannot resolve repository root"; diff_base=$(git -C "$repo_root" merge-base origin/main HEAD 2>/dev/null) || fail "cannot resolve merge-base for origin/main and HEAD"; [[ -n "$diff_base" ]] || fail "empty merge-base for origin/main and HEAD"; source_diff_limit=16000000; git -C "$repo_root" diff --binary "$diff_base" HEAD -- examples/spin-p3-smoke PORT_STATUS.md >"$tmp/source-diff" || fail "cannot generate scoped source diff"; source_diff_hash=$(shasum -a 256 "$tmp/source-diff" | awk '{print $1}'); source_diff_bytes=$(wc -c <"$tmp/source-diff" | tr -d ' '); [[ "$source_diff_bytes" -gt 0 ]] || fail "scoped source diff was empty"; [[ "$source_diff_bytes" -le "$source_diff_limit" ]] || fail "scoped source diff exceeded ${source_diff_limit} bytes"
+[[ -d "$component_logs_path" ]] || fail "Spin component log directory missing: $component_logs_path"; component_log_files=$(find "$component_logs_path" -type f | wc -l | tr -d ' '); [[ "$component_log_files" -gt 0 ]] || fail "Spin component log directory was empty"
+cat "$tmp"/concurrent-*.body >"$tmp/concurrent-bodies.scan"; cat "$tmp"/*.stdout "$tmp"/*.stderr >"$tmp/launcher-logs.scan"; cat "$tmp/generated.body" "$tmp/generated-2.body" "$tmp/seq-1.body" "$tmp/seq-2.body" "$tmp"/concurrent-*.body "$tmp/restart.body" >"$tmp/http-bodies.scan"
+scan_labels=(source diff manifest config skill runtime_config artifact missing_stdout missing_stderr empty_stdout empty_stderr whitespace_stdout whitespace_stderr generated_body generated_body_2 seq1_body seq2_body concurrent_bodies restart_body mock_capture launcher_logs component_logs kv_db evidence); scan_paths=("$root" "$tmp/source-diff" "$root/spin.toml" "$root/fixtures/config.json" "$root/fixtures/SKILL.md" "$runtime_cfg" "$root/main.wasm" "$tmp/missing.stdout" "$tmp/missing.stderr" "$tmp/empty.stdout" "$tmp/empty.stderr" "$tmp/whitespace.stdout" "$tmp/whitespace.stderr" "$tmp/generated.body" "$tmp/generated-2.body" "$tmp/seq-1.body" "$tmp/seq-2.body" "$tmp/concurrent-bodies.scan" "$tmp/restart.body" "$mock_receipts" "$tmp/launcher-logs.scan" "$component_logs_path" "$state_path" "$out"); scan_counts=()
+for i in "${!scan_labels[@]}"; do count=$(rg -a -F -o "$sentinel" "${scan_paths[$i]}" 2>/dev/null | wc -l | tr -d ' ' || true); scan_counts+=("${scan_labels[$i]}=$count"); [[ "$count" == 0 ]] || fail "secret leaked into ${scan_labels[$i]}"; done
+[[ "$spin_dir_preexisting" == true ]] || spin_dir_created=true
+clean_run_spin_dir
+[[ "$spin_dir_preexisting" == true || "$spin_dir_cleanup" == removed-run-created ]] || fail "run-created Spin directory cleanup was not recorded"
 mock_pid_record=$mock_pid; mock_command=$(ps -p "$mock_pid" -o command= 2>/dev/null || true); [[ "$mock_command" == *"$tmp/mock"* ]] || fail "mock ownership lost"; kill "$mock_pid" 2>/dev/null || true; set +e; wait "$mock_pid"; mock_exit=$?; set -e; mock_pid=0
 scan_json=$(printf '%s\n' "${scan_counts[@]}" | python3 -c 'import json,sys; print(json.dumps(dict(x.rstrip("\n").split("=",1) for x in sys.stdin), sort_keys=True, separators=(",",":")))')
 spin_version=$(spin --version | head -1); go_version=$(go version); wasm_tools_version=$(wasm-tools --version | head -1); curl_version=$(curl --version | head -1)
+host_os=$(uname -s); host_kernel=$(uname -r); host_kernel_machine=$(uname -m); host_hardware=$(sysctl -n hw.machine 2>/dev/null || printf unavailable); host_process_translation=$(sysctl -in sysctl.proc_translated 2>/dev/null || printf unavailable)
+tool_architectures=$(python3 - "$(command -v spin)" "$(command -v go)" "$(command -v wasm-tools)" "$(command -v curl)" "$(command -v jq)" "$(command -v rg)" "$(command -v python3)" <<'PY'
+import json,os,subprocess,sys
+names=("spin","go","wasm-tools","curl","jq","rg","python3")
+result={}
+for name,path in zip(names,sys.argv[1:]):
+    try:
+        output=subprocess.check_output(["file","-b",path],text=True).strip()
+    except (OSError,subprocess.CalledProcessError) as error:
+        raise SystemExit(f"cannot inspect {name} architecture: {error}")
+    result[name]={"path":path,"resolved_path":os.path.realpath(path),"file":output}
+print(json.dumps(result,sort_keys=True,separators=(",",":")))
+PY
+) || fail "tool binary architecture inspection failed"
 status_clean=true; mkdir -p "$(dirname "$out")"
 wit_summary=$(rg 'export wasi:http/handler|import spin:variables/variables@3.0.0|import spin:key-value/key-value@3.0.0' "$tmp/wit.txt" | tr '\n' ';')
 receipt_ids=$(jq -sc '[.[].receipt_id]' "$mock_receipts")
-python3 - "$out" "$commit" "$run_started" "$artifact_run_hash" "$artifact_run_bytes" "$manifest_hash" "$wit_hash" "$wit_summary" "$port" "$mock_port" "$mock_pid_record" "$mock_exit" "$mock_command" "$first_spin_pid" "$first_spin_listener_pid" "$first_spin_command" "$first_spin_listener_command" "$first_spin_exit" "$restart_spin_pid" "$restart_spin_listener_pid" "$restart_spin_command" "$restart_spin_listener_command" "$restart_spin_exit" "$state_path" "$config_before" "$config_after" "$config_expected" "$skill_before" "$skill_after" "$skill_expected" "$receipt_count" "$receipt_ids" "$generated_id" "$generated_id_2" "$default_store_class" "$ungranted_store_class" "$final_map" "$scan_json" "$status_clean" "$spin_version" "$go_version" "$wasm_tools_version" "$curl_version" "$diff_base" "$source_diff_hash" "$source_diff_bytes" "$source_diff_limit" <<'PY'
+python3 - "$out" "$commit" "$run_started" "$artifact_run_hash" "$artifact_run_bytes" "$manifest_hash" "$wit_hash" "$wit_summary" "$port" "$mock_port" "$mock_pid_record" "$mock_exit" "$mock_command" "$first_spin_pid" "$first_spin_listener_pid" "$first_spin_command" "$first_spin_listener_command" "$first_spin_exit" "$restart_spin_pid" "$restart_spin_listener_pid" "$restart_spin_command" "$restart_spin_listener_command" "$restart_spin_exit" "$state_path" "$config_before" "$config_after" "$config_expected" "$skill_before" "$skill_after" "$skill_expected" "$receipt_count" "$receipt_ids" "$generated_id" "$generated_id_2" "$default_store_class" "$ungranted_store_class" "$final_map" "$scan_json" "$status_clean" "$spin_version" "$go_version" "$wasm_tools_version" "$curl_version" "$diff_base" "$source_diff_hash" "$source_diff_bytes" "$source_diff_limit" "$host_os" "$host_kernel" "$host_kernel_machine" "$host_hardware" "$host_process_translation" "$tool_architectures" "$component_logs_path" "$component_log_files" "$spin_dir_preexisting" "$spin_dir_created" "$spin_dir_cleanup" "$kv_db_schema" <<'PY'
 import json,sys,platform
-(out,commit,started,artifact,artifact_bytes,manifest,wit,wit_summary,port,mock_port,mock_pid,mock_exit,mock_command,first_pid,first_listener_pid,first_command,first_listener_command,first_exit,restart_pid,restart_listener_pid,restart_command,restart_listener_command,restart_exit,state_path,cb,ca,config_expected,sb,sa,skill_expected,receipts,receipt_ids,generated_id,generated_id_2,default_class,ungranted_class,final_map,scans,clean,spin_version,go_version,wasm_tools_version,curl_version,diff_base,diff_hash,diff_bytes,diff_limit)=sys.argv[1:]
+(out,commit,started,artifact,artifact_bytes,manifest,wit,wit_summary,port,mock_port,mock_pid,mock_exit,mock_command,first_pid,first_listener_pid,first_command,first_listener_command,first_exit,restart_pid,restart_listener_pid,restart_command,restart_listener_command,restart_exit,state_path,cb,ca,config_expected,sb,sa,skill_expected,receipts,receipt_ids,generated_id,generated_id_2,default_class,ungranted_class,final_map,scans,clean,spin_version,go_version,wasm_tools_version,curl_version,diff_base,diff_hash,diff_bytes,diff_limit,host_os,host_kernel,host_machine,host_hardware,process_translation,tool_architectures,component_logs_path,component_log_files,spin_dir_preexisting,spin_dir_created,spin_dir_cleanup,kv_db_schema)=sys.argv[1:]
 cases=[{"id":generated_id,"kind":"generated","http":200,"foreign_value":False},{"id":generated_id_2,"kind":"generated","http":200,"foreign_value":False}]+[{"id":f"runtime-seq-{n}","kind":"sequential","http":200,"foreign_value":False} for n in (1,2)]+[{"id":f"runtime-concurrent-{n}","kind":"concurrent","http":200,"foreign_value":False} for n in range(1,21)]+[{"id":"runtime-seq-1","kind":"restart","http":200,"old_read":True,"foreign_value":False}]
 d={"status":"pass","started_utc":started,"commit":commit,"clean_checkout_before":clean=="true","host":{"os":platform.system(),"release":platform.release(),"architecture":platform.machine()},"tool_versions":{"spin":{"version":spin_version,"architecture":platform.machine()},"go":{"version":go_version,"architecture":platform.machine()},"wasm_tools":{"version":wasm_tools_version,"architecture":platform.machine()},"curl":{"version":curl_version,"architecture":platform.machine()}},"artifact":{"path":"examples/spin-p3-smoke/main.wasm","sha256":artifact,"bytes":int(artifact_bytes)},"manifest":{"sha256":manifest,"grants":{"outbound_hosts":["http://127.0.0.1:31808"],"variables":["probe_secret->secret"],"files":["fixtures/config.json->/fixtures/config.json","fixtures/SKILL.md->/fixtures/SKILL.md"],"key_value_stores":["workspace"]}},"wit":{"summary":wit_summary,"sha256":wit},"ports":{"spin_http":int(port),"mock_http":int(mock_port)},"processes":{"mock":{"pid":int(mock_pid),"command":mock_command,"exit":int(mock_exit)},"first_spin":{"pid":int(first_pid),"listener_pid":int(first_listener_pid),"command":first_command,"listener_command":first_listener_command,"exit":int(first_exit)},"restart_spin":{"pid":int(restart_pid),"listener_pid":int(restart_listener_pid),"command":restart_command,"listener_command":restart_listener_command,"exit":int(restart_exit)}},"state_path":state_path,"secret_cases":{"missing":{"result":"startup-denied","error":"no provider resolved required variable"},"empty":{"result":"request-denied"},"whitespace":{"result":"request-denied"},"injected_by":"file-path"},"requests":{"case_table":cases,"sequential":2,"concurrent":20,"restart":"old-read-before-overwrite","server_generated_ids":True,"generated_ids":[generated_id,generated_id_2],"foreign_values":False},"stores":{"default":default_class,"ungranted":ungranted_class},"fixtures":{"config_before":cb,"config_after":ca,"expected_config":config_expected,"skill_before":sb,"skill_after":sa,"expected_skill":skill_expected,"writes_denied":True,"named_repo_file_denied":"spin.toml","denied_paths":["/etc/hosts","/fixtures/../config.json","/fixtures/other.txt","/spin.toml"]},"mock":{"owned":True,"receipt_count":int(receipts),"receipt_ids":json.loads(receipt_ids),"capture":"mock-receipts.jsonl"},"final_kv_map":json.loads(final_map),"secret_scan_counts":json.loads(scans),"secret_scan_self_check":0,"provenance":{"evidence":"generated directly by this clean runtime run","old_secret_value_recorded":False,"scoped_diff":{"base_ref":"origin/main","base_commit":diff_base,"head_commit":commit,"paths":["examples/spin-p3-smoke","PORT_STATUS.md"],"sha256":diff_hash,"bytes":int(diff_bytes),"max_bytes":int(diff_limit)}}}
+d["host"]={"os":host_os,"kernel_release":host_kernel,"kernel_machine":host_machine,"hardware_machine":host_hardware,"process_translation":process_translation}
+d["tool_versions"]={"spin":{"version":spin_version},"go":{"version":go_version},"wasm_tools":{"version":wasm_tools_version},"curl":{"version":curl_version}}
+d["tool_binary_architectures"]=json.loads(tool_architectures)
+d["secret_cases"]["empty"]["data_routes"]={"/snapshot":404,"/probe":404}
+d["secret_cases"]["whitespace"]["data_routes"]={"/snapshot":404,"/probe":404}
+d["kv_db"]=json.loads(kv_db_schema)
+d["component_logs"]={"path":component_logs_path,"files":int(component_log_files),"spin_dir_preexisting":spin_dir_preexisting=="true","spin_dir_created":spin_dir_created=="true","cleanup":spin_dir_cleanup}
 with open(out,"w",encoding="utf-8") as f: json.dump(d,f,indent=2,sort_keys=True); f.write("\n")
 PY
 rg -a -F "$sentinel" "$out" >/dev/null 2>&1 && fail "secret leaked into final evidence"; cat "$out"

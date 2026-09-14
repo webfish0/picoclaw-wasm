@@ -8,7 +8,6 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"sort"
 	"strings"
 
 	spinhttp "github.com/spinframework/spin-go-sdk/v3/http"
@@ -19,10 +18,6 @@ import (
 
 func init() {
 	spinhttp.Handle(func(w http.ResponseWriter, r *http.Request) {
-		if r.Method == http.MethodGet && r.URL.Path == "/snapshot" {
-			writeSnapshot(w)
-			return
-		}
 		if r.Method != http.MethodPost || r.URL.Path != "/probe" {
 			http.Error(w, "not found", http.StatusNotFound)
 			return
@@ -134,32 +129,6 @@ func init() {
 		w.WriteHeader(http.StatusOK)
 		_, _ = fmt.Fprintf(w, "SPIN_P3_OK\nrequest_id=%s\nserver_id=%s\nstored_value=%s\npreexisting=%t\nprevious_value=%s\ndenied_default_class=%s\ndenied_ungranted_class=%s\nfixtures=read-only\ndenied_paths=/etc/hosts,/fixtures/../config.json,/fixtures/other.txt,/spin.toml\n%s", correlationID, serverID, stored, preexisting, previousValue, deniedStoreClasses["default"], deniedStoreClasses["ungranted"], strings.TrimSpace(string(body)))
 	})
-}
-
-func writeSnapshot(w http.ResponseWriter) {
-	store, err := kv.Open("workspace")
-	if err != nil {
-		http.Error(w, "probe storage unavailable", http.StatusServiceUnavailable)
-		return
-	}
-	keys := make([]string, 0)
-	for key, iterErr := range store.GetKeys() {
-		if iterErr != nil {
-			http.Error(w, "probe storage unavailable", http.StatusServiceUnavailable)
-			return
-		}
-		keys = append(keys, key)
-	}
-	sort.Strings(keys)
-	w.Header().Set("Content-Type", "text/plain")
-	for _, key := range keys {
-		value, getErr := store.Get(key)
-		if getErr != nil {
-			http.Error(w, "probe storage unavailable", http.StatusServiceUnavailable)
-			return
-		}
-		_, _ = fmt.Fprintf(w, "%s=%s\n", key, value)
-	}
 }
 
 func boundaryErrorClass(err error) string {

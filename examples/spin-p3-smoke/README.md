@@ -33,10 +33,12 @@ SPIN_ACCEPTANCE_OUT=/tmp/spin-acceptance.json ./examples/spin-p3-smoke/acceptanc
 
 It rebuilds and diagnoses the component, runs policy tests, checks the WIT
 imports/exports, records one artifact hash, and performs a zero-match scan
-using a mode-0600 temporary secret file. Runtime restart/concurrency evidence
-must be added by the launcher UAT harness before this capability issue closes.
+using a mode-0600 temporary secret file. It also runs the black-box
+restart/concurrency matrix. The component intentionally exposes only POST
+`/probe`; no snapshot or other data-read route is available.
 
 The latest runtime transcript is generated directly by the clean acceptance
 run at the output path supplied by `SPIN_ACCEPTANCE_OUT`; it records the exact
-artifact hash, complete case table, final KV map, and zero-match secret scans
-without recording the sentinel.
+artifact hash, complete case table, final KV map verified from the stopped
+task-owned SQLite state, component/launcher log scans, and zero-match secret
+scans without recording the sentinel.
