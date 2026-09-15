@@ -1,0 +1,22 @@
+spin_manifest_version = 2
+
+[application]
+name = "picoclaw-spin-outbound-matrix"
+version = "0.1.0"
+
+[[trigger.http]]
+route = "/..."
+component = "probe"
+
+[[trigger.http]]
+route = { private = true }
+component = "mock"
+
+[component.probe]
+source = "../../matrix.wasm"
+allowed_outbound_hosts = ["http://127.0.0.1:18090", "http://mock.spin.internal"]
+
+[component.mock]
+source = "../../matrix.wasm"
+allowed_outbound_hosts = []
+environment = { SPIN_PROBE_INTERNAL_MOCK = "1" }
