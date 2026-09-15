@@ -51,6 +51,20 @@ Updated: 2026-09-15
   WIT inspection, secret/store/isolation checks, and measurements exist; the
   owned-mock run and negative outbound/service-chaining matrix remain open.
   The Sol decision for #11 is still NO-GO.
+- PR #32 merged to `codex/wasi-port-prototype` at `6ce5c916` (not to remote
+  `main`). Issue #33 now tracks deterministic mock ownership: the harness
+  requires a unique run marker and receipt hashes. An unowned `go run ./mock`
+  PID 71788/child 71894 currently occupies 127.0.0.1:18080, so the owned
+  positive run remains blocked; its owner must stop it or provide an isolated
+  fixture environment. No unowned process was terminated.
+- A controlled 18090/18091 matrix with exact grants gave HTTP 200 for allowed
+  loopback and private `mock.spin.internal` service chaining, 502 for wrong
+  scheme/host/port, and zero denied-mock receipts. A direct userinfo URL also
+  returned 200 with an allowed-mock receipt, despite the normal `/probe`
+  validator rejecting userinfo. Redirect returned 502/invalid-URI after the
+  allowed receipt; the raw-socket code path returned 502 without a
+  `wasi:sockets` import. These are partial #19 results, not a passed full
+  matrix. A named Sol review is pending on the userinfo contract.
 - `wasm-tools` v1.259.0 is now installed and
   `wasm-tools component wit examples/spin-p3-smoke/main.wasm` confirms the
   expected `wasi:http/handler@0.3.0-rc-2026-03-15` export and standard WASI

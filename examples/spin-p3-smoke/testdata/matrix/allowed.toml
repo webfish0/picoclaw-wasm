@@ -1,0 +1,32 @@
+spin_manifest_version = 2
+
+[application]
+name = "picoclaw-spin-outbound-matrix"
+version = "0.1.0"
+
+[variables]
+probe_secret = { required = true }
+
+[[trigger.http]]
+route = "/..."
+component = "probe"
+
+[[trigger.http]]
+route = { private = true }
+component = "mock"
+
+[component.probe]
+source = "../../main.wasm"
+allowed_outbound_hosts = ["http://127.0.0.1:18090", "http://mock.spin.internal"]
+environment = { SPIN_PROBE_MATRIX_ENABLED = "1" }
+variables = { secret = "{{ probe_secret }}" }
+files = [
+  { source = "../../fixtures/config.json", destination = "/fixtures/config.json" },
+  { source = "../../fixtures/SKILL.md", destination = "/fixtures/SKILL.md" },
+]
+key_value_stores = ["workspace"]
+
+[component.mock]
+source = "../../main.wasm"
+allowed_outbound_hosts = []
+environment = { SPIN_PROBE_INTERNAL_MOCK = "1" }
