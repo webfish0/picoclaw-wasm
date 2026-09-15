@@ -13,8 +13,24 @@ printf '[key_value_store.workspace]\ntype = "spin"\npath = "%s"\n' "$tmp/workspa
 artifact_backup="$tmp/main.wasm.backup"
 cp main.wasm "$artifact_backup"
 if [[ "$mock_url" == "http://127.0.0.1:18080/" ]]; then
-  go run ./mock >"$tmp/mock.stdout" 2>"$tmp/mock.stderr" & mock_pid=$!
-  for _ in {1..100}; do curl -sS "$mock_url" -o /dev/null >/dev/null 2>&1 && break; sleep 0.1; done
+  if curl --silent --show-error --max-time 1 "$mock_url" -o /dev/null >/dev/null 2>&1; then
+    echo '{"status":"fail","reason":"port 18080 already serves HTTP; deterministic mock cannot own it"}' >"$out"
+    exit 1
+  fi
+  go build -o "$tmp/mock" ./mock
+  "$tmp/mock" >"$tmp/mock.stdout" 2>"$tmp/mock.stderr" & mock_pid=$!
+  mock_ready=0
+  for _ in {1..100}; do
+    if curl --fail --silent --show-error "$mock_url" -o /dev/null >/dev/null 2>&1 && kill -0 "$mock_pid" 2>/dev/null; then
+      mock_ready=1
+      break
+    fi
+    sleep 0.1
+  done
+  if [[ "$mock_ready" -ne 1 ]]; then
+    echo '{"status":"fail","reason":"deterministic mock did not become ready; check port 18080 ownership"}' >"$out"
+    exit 1
+  fi
 fi
 if ! PATH="${SPIN_GO_BIN:-/tmp/picoclaw-spin-native-arm64/go/bin}:$PATH" GOTOOLCHAIN=local spin build --from spin.toml >/dev/null; then
   cp "$artifact_backup" main.wasm

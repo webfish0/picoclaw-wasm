@@ -1,6 +1,6 @@
 # Port status
 
-Updated: 2026-09-12
+Updated: 2026-09-15
 
 ## Completed
 
@@ -47,10 +47,10 @@ Updated: 2026-09-12
   so Wasmtime network flags cannot provide real host TCP to this module.
 - Direct in-module provider networking remains unavailable; the verified
   working deployment currently requires the restricted native bridge.
-- Spin spike #14 is resolvable but not complete. The checked-out smoke module
-  still has incomplete test wiring, no complete
-  negative-network/secret/storage/concurrency evidence, no WIT inspection or
-  measurements, and no final Sol GO/NO-GO for #11.
+- Spin spike #14 is resolvable but not complete. Focused policy tests,
+  WIT inspection, secret/store/isolation checks, and measurements exist; the
+  owned-mock run and negative outbound/service-chaining matrix remain open.
+  The Sol decision for #11 is still NO-GO.
 - `wasm-tools` v1.259.0 is now installed and
   `wasm-tools component wit examples/spin-p3-smoke/main.wasm` confirms the
   expected `wasi:http/handler@0.3.0-rc-2026-03-15` export and standard WASI
@@ -61,11 +61,11 @@ Updated: 2026-09-12
   WIT inspection confirms `spin:variables/variables@3.0.0` and
   `spin:key-value/key-value@3.0.0`; missing-variable startup fails closed and
   the supplied-variable direct mock request returns HTTP 200 with a matched
-  correlation ID. Restart/concurrency, sentinel scans, and final Sol GO remain
-  outstanding.
-- Prerequisite #13 has a successful native ARM64 template build/start, but its
-  remaining WIT and reproducibility evidence must be completed before #14 can
-  close.
+  correlation ID. Clean-checkout runtime checks passed two sequential and 20
+  concurrent requests, restart persistence, and zero sentinel leaks against
+  an external fixture; an owned deterministic mock run remains outstanding.
+- Prerequisite #13 is resolved with official Go 1.27.1 darwin/arm64 and the
+  pinned Spin 4.1.0 P3 smoke build.
 
 ## Tests and failures
 
@@ -137,10 +137,24 @@ temporary sentinel; artifact hash was
 This does not claim the remaining black-box restart/concurrency matrix or
 launcher/browser UAT.
 
+Spin runtime-config review: a clean checkout at `4332fd8a` built and passed
+`spin doctor` with Spin 4.1.0 and Go 1.27.1 darwin/arm64. The tracked
+`examples/spin-p3-smoke/runtime-config.toml` starts the named `workspace`
+store; a manual loopback request returned HTTP 200 after explicitly setting
+`SPIN_PROBE_MOCK_URL`, and `.spin/workspace.db` appeared. The previous README
+command omitted this environment variable and returned HTTP 500. The runtime
+harness passed two sequential, 20 concurrent, restart, and zero sentinel-leak
+checks from a clean checkout, but port 18080 was held by an older Python
+fixture; mock provenance was not controlled. The harness now fails when its
+own deterministic mock cannot become ready. Keep #14 open until an owned-mock
+run, outbound denial matrix, and final Sol capability gate pass. Browser and
+launcher UAT remain separate gates.
+
 ## Next action
 
-Keep #11 blocked and complete the runtime restart/concurrency and denied-
-resource harness for #20, then #21 with final Sol re-review. Formally complete
-#13 before #21. Continue to use the verified bridge path for the existing
-prototype until direct Spin launcher integration and #15 real-browser UAT pass;
-human approval remains required before merge.
+Keep #11 blocked. Resolve the port-18080 mock-ownership collision, complete
+#18/#19 negative outbound and service-chaining evidence, then run #21's final
+capability gate. #15 and #27 require visible browser clicks/screens, while #26
+requires launcher integration. Continue the verified bridge path for the
+existing prototype until direct Spin integration and UAT pass; human approval
+remains required before merge.
