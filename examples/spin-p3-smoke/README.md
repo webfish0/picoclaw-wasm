@@ -77,17 +77,26 @@ checks restart/concurrency and requires its own mock to become ready; a port
 collision fails the check instead of accepting an unrelated service. Launcher
 and visible-browser UAT are separate gates.
 
-The outbound matrix uses test-only manifests in `testdata/matrix/`. Its allowed
+The outbound matrix uses a separate pinned test module in `testdata/matrix/`.
+Build its artifact from that directory with
+`go tool componentize-go build -o ../../matrix.wasm`; the normal `spin build`
+produces `main.wasm` from a different source directory with no `/matrix` or
+private-mock handler. Its allowed
 variant grants exactly `http://127.0.0.1:18090` to a task-owned mock and,
 separately, `http://mock.spin.internal` for an in-process private component.
-The empty variant grants no outbound hosts. The `/matrix` route is enabled only
-by these test manifests and accepts fixed case names, never a caller-supplied
+The empty variant grants no outbound hosts. The `/matrix` route is available
+only in the test artifact and accepts fixed case names, never a caller-supplied
 URL. This 18090 control does not substitute for the required owned 18080 run
 on the production smoke manifest. In the 2026-09-15 control, Spin denied wrong
 scheme, host and port, while a direct URL containing userinfo reached the
 allowed mock; the normal `/probe` URL validator rejects userinfo before
 outbound. Issue #19 records the specialist review of that difference and the
-redirect/raw-socket limits before any final capability claim.
+redirect/raw-socket limits before any final capability claim. An exact 18080
+owned-mock run now passed with 23 hashed receipts, two sequential requests,
+20 concurrent requests, restart persistence, and zero secret matches. The
+normal artifact returned 404 for `/matrix` even when the enabling environment
+variable was set; its `/probe` returned sanitized 400 for a userinfo URL with
+zero mock receipts and 200 for the valid canonical origin.
 
 For startup measurements, use the same runtime configuration and record ten
 valid cold starts, request latency, idle RSS, and peak RSS with the host and

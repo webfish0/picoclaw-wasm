@@ -4,20 +4,10 @@ spin_manifest_version = 2
 name = "picoclaw-spin-outbound-matrix-empty"
 version = "0.1.0"
 
-[variables]
-probe_secret = { required = true }
-
 [[trigger.http]]
 route = "/..."
 component = "probe"
 
 [component.probe]
-source = "../../main.wasm"
+source = "../../matrix.wasm"
 allowed_outbound_hosts = []
-environment = { SPIN_PROBE_MATRIX_ENABLED = "1" }
-variables = { secret = "{{ probe_secret }}" }
-files = [
-  { source = "../../fixtures/config.json", destination = "/fixtures/config.json" },
-  { source = "../../fixtures/SKILL.md", destination = "/fixtures/SKILL.md" },
-]
-key_value_stores = ["workspace"]

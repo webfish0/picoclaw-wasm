@@ -52,11 +52,12 @@ Updated: 2026-09-15
   owned-mock run and negative outbound/service-chaining matrix remain open.
   The Sol decision for #11 is still NO-GO.
 - PR #32 merged to `codex/wasi-port-prototype` at `6ce5c916` (not to remote
-  `main`). Issue #33 now tracks deterministic mock ownership: the harness
-  requires a unique run marker and receipt hashes. An unowned `go run ./mock`
-  PID 71788/child 71894 currently occupies 127.0.0.1:18080, so the owned
-  positive run remains blocked; its owner must stop it or provide an isolated
-  fixture environment. No unowned process was terminated.
+  `main`). Issue #33 tracks deterministic mock ownership: the harness requires
+  a unique run marker and receipt hashes. The previous unowned `go run ./mock`
+  PID 71788/child 71894 released port 18080 without this task terminating it.
+  The exact owned-mock run then passed: 23 matching receipts, two sequential
+  and 20 concurrent requests, restart persistence, missing-secret failure,
+  and zero sentinel matches. Human approval of draft PR #36 remains required.
 - A controlled 18090/18091 matrix with exact grants gave HTTP 200 for allowed
   loopback and private `mock.spin.internal` service chaining, 502 for wrong
   scheme/host/port, and zero denied-mock receipts. A direct userinfo URL also
@@ -64,7 +65,17 @@ Updated: 2026-09-15
   validator rejecting userinfo. Redirect returned 502/invalid-URI after the
   allowed receipt; the raw-socket code path returned 502 without a
   `wasi:sockets` import. These are partial #19 results, not a passed full
-  matrix. A named Sol review is pending on the userinfo contract.
+  matrix. A named Sol review recorded the userinfo contract distinction on
+  #19; the human acceptance choice remains pending.
+- Named Sol review on #19 recommended exact host-origin grant plus component
+  URL-syntax rejection and explicit redirect refusal; human choice of this
+  layered acceptance wording remains open. Issue #34's normal-path control
+  returned sanitized 400 for an invalid userinfo URL with zero owned-mock
+  receipts, then 200 for the valid origin with one receipt. The normal
+  `main.wasm` returned 404 for `/matrix` even when its enablement variable
+  was supplied; fixed-case probes now compile from a separate pinned test
+  module into `matrix.wasm`, with no test handler in the normal Go source.
+  Redirect containment #35 remains next.
 - `wasm-tools` v1.259.0 is now installed and
   `wasm-tools component wit examples/spin-p3-smoke/main.wasm` confirms the
   expected `wasi:http/handler@0.3.0-rc-2026-03-15` export and standard WASI
@@ -166,8 +177,8 @@ launcher UAT remain separate gates.
 
 ## Next action
 
-Keep #11 blocked. Resolve the port-18080 mock-ownership collision, complete
-#18/#19 negative outbound and service-chaining evidence, then run #21's final
+Keep #11 blocked. Obtain human approval for the layered #19 acceptance wording,
+complete #35 redirect and independent denial evidence, then run #21's final
 capability gate. #15 and #27 require visible browser clicks/screens, while #26
 requires launcher integration. Continue the verified bridge path for the
 existing prototype until direct Spin integration and UAT pass; human approval
